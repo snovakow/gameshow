@@ -65,8 +65,8 @@
 						this._action.setLoop(THREE.LoopRepeat);
 					} else {
 						this._action.setLoop(THREE.LoopOnce);
+						this._action.clampWhenFinished = true;
 					}
-					this._action.clampWhenFinished = true;
 				}
 				return this._action;
 			}
