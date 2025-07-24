@@ -37,18 +37,150 @@
 
 		import Stats from 'three/addons/libs/stats.module.js';
 
+		import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+		import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+
 		let camera, scene, renderer;
-		let model, mixer, clock;
+		let model, mixer = null, clock;
 		let postProcessing;
 		let controls;
 		let stats;
+		let gui;
 
-		init();
+		const initialAnimation = "Idle 1";
+		let previousAction = null, activeAction = null;
 
-		function init() {
+		class Animation {
+			constructor(name, clip, looping) {
+				this.name = name;
+				this.clip = clip;
+				this.looping = looping;
+				this._action = null;
+			}
+			clipAction(mixer) {
+				if (!mixer) return null;
+				if (!this._action) {
+					this._action = mixer.clipAction(this.clip);
+					if (this.looping) {
+						this._action.setLoop(THREE.LoopRepeat);
+					} else {
+						this._action.setLoop(THREE.LoopOnce);
+					}
+					this._action.clampWhenFinished = true;
+				}
+				return this._action;
+			}
+		}
+		const animations = new Map();
+		const playAnimation = (name) => {
+			const animation = animations.get(name);
+			if (!animation) return null;
+			const action = animation.clipAction(mixer);
+			if (!action) return null;
+			action.play();
+			return action;
+		}
+
+		gui = new GUI();
+
+		const stances = [];
+		const poses = [];
+		const loader = new FBXLoader();
+		const addAnimation = (looping, name, fileName, play = false) => {
+			if (looping) stances.push(name);
+			else poses.push(name);
+			loader.load(`/animations/${fileName}`, (modelAnimation) => {
+				const animation = new Animation(name, modelAnimation.animations[0], null, looping);
+				animations.set(name, animation);
+				if (play) {
+					activeAction = playAnimation(name);
+				}
+			});
+		};
+
+		addAnimation(true, initialAnimation, "Idle2.fbx", true);
+		addAnimation(true, "Idle 2", "Idle.fbx");
+		addAnimation(true, "Idle 3", "Standing W_Briefcase Idle.fbx");
+		addAnimation(false, "defeated", "Defeated.fbx");
+		addAnimation(false, "rejected", "Rejected.fbx");
+		addAnimation(false, "sad", "Sad Idle.fbx");
+		addAnimation(false, "samba", "Samba Dancing.fbx");
+
+		const api = {
+			stanceDuration: 0.5,
+			stance: initialAnimation,
+			poseDuration: 0.2,
+			poses: {}
+		};
+
+		const stancesFolder = gui.addFolder('Stances');
+
+		stancesFolder.add(api, 'stanceDuration', 0, 5).name('Duration');
+
+		const fadeToAction = (name, duration) => {
+			const animation = animations.get(name);
+			if (!animation) return;
+			const action = animation.clipAction(mixer);
+			if (!action) return;
+
+			if (activeAction === action) return;
+
+			previousAction = activeAction;
+			activeAction = action;
+
+			if (previousAction && previousAction !== activeAction) {
+				previousAction.fadeOut(duration);
+			}
+
+			activeAction
+				.reset()
+				.setEffectiveTimeScale(1)
+				.setEffectiveWeight(1)
+				.fadeIn(duration)
+				.play();
+		}
+
+		const clipCtrl = stancesFolder.add(api, 'stance').options(stances).name("Stance");
+		clipCtrl.onChange(function () {
+			fadeToAction(api.stance, api.stanceDuration);
+		});
+
+		const poseFolder = gui.addFolder('Poses');
+
+		poseFolder.add(api, 'poseDuration', 0, 5).name('Duration');
+
+		const restoreState = () => {
+
+			mixer.removeEventListener('finished', restoreState);
+
+			fadeToAction(api.stance, api.poseDuration);
+
+		}
+
+		const createPoseCallback = (name) => {
+
+			api.poses[name] = () => {
+
+				fadeToAction(name, api.poseDuration);
+
+				mixer.addEventListener('finished', restoreState);
+
+			};
+
+			poseFolder.add(api.poses, name);
+
+		}
+
+		for (const pose of poses) {
+
+			createPoseCallback(pose);
+
+		}
+
+		const init = () => {
 
 			camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.25, 30);
-			camera.position.set(2, 2.5, 3);
+			camera.position.set(0, 2.5, 3);
 
 			scene = new THREE.Scene();
 			scene.fog = new THREE.Fog(0x0487e2, 7, 25);
@@ -66,6 +198,10 @@
 			sunLight.shadow.mapSize.width = 2048;
 			sunLight.shadow.mapSize.height = 2048;
 			sunLight.shadow.bias = - 0.001;
+
+			sunLight.shadow.intensity = 1;
+			sunLight.shadow.radius = 5;
+
 			sunLight.position.set(.5, 3, .5);
 
 			const waterAmbientLight = new THREE.HemisphereLight(0x333366, 0x74ccf4, 5);
@@ -82,14 +218,15 @@
 			loader.load('/models/gltf/Michelle.glb', function (gltf) {
 
 				model = gltf.scene;
+				model.rotation.x = -Math.PI * 0.5;
 				model.children[0].children[0].castShadow = true;
+				model.children[0].children[0].receiveShadow = true;
 
 				mixer = new THREE.AnimationMixer(model);
 
-				const action = mixer.clipAction(gltf.animations[0]);
-				action.play();
-
 				scene.add(model);
+
+				activeAction = playAnimation(initialAnimation);
 
 			});
 			// textures
@@ -140,8 +277,8 @@
 			controls.minDistance = 1;
 			controls.maxDistance = 10;
 			controls.maxPolarAngle = Math.PI / 2;
-			controls.autoRotate = true;
-			controls.autoRotateSpeed = 1;
+			// controls.autoRotate = true;
+			// controls.autoRotateSpeed = 1;
 			controls.target.set(0, .5, 0);
 			controls.update();
 
@@ -161,6 +298,7 @@
 
 			window.addEventListener('resize', onWindowResize);
 		}
+		init();
 
 		function onWindowResize() {
 
@@ -185,8 +323,8 @@
 
 			}
 
-			postProcessing.render();
-
+			// renderer.render( scene, camera );
+			if (postProcessing) postProcessing.render();
 		}
 
 	</script>
