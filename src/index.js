@@ -1,6 +1,5 @@
-import * as THREE from 'three';
-import { color, pass, reflector, normalWorldGeometry, texture, uv, screenUV } from 'three/tsl';
-import { gaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';
+import * as THREE from 'three/webgpu';
+import { color, reflector, normalWorldGeometry, texture, uv } from 'three/tsl';
 
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
@@ -77,17 +76,6 @@ addAnimation(false, "Sad", "Sad Idle.fbx");
 addAnimation(false, "Samba Dancing", "Samba Dancing.fbx");
 addAnimation(false, "Samba Dancing 2", "Samba Dancing 2.fbx");
 addAnimation(false, "Samba Dancing 3", "Samba Dancing 3.fbx");
-addAnimation(false, "Dancing Maraschino Step", "Dancing Maraschino Step.fbx");
-addAnimation(false, "Hip Hop Dancing", "Hip Hop Dancing.fbx");
-addAnimation(false, "Hip Hop Dancing 2", "Hip Hop Dancing 2.fbx");
-addAnimation(false, "Rumba Dancing", "Rumba Dancing.fbx");
-addAnimation(false, "Silly Dancing", "Silly Dancing.fbx");
-
-const merged = new Map();
-merged.set("Dancing Maraschino Step", "Hip Hop Dancing");
-merged.set("Hip Hop Dancing", "Hip Hop Dancing 2");
-merged.set("Hip Hop Dancing 2", "Rumba Dancing");
-merged.set("Rumba Dancing", "Silly Dancing ");
 
 const api = {
     stanceDuration: 1,
