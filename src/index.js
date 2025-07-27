@@ -1,4 +1,5 @@
-import * as THREE from 'three/webgpu';
+import * as THREE from 'three';
+
 import { color, reflector, normalWorldGeometry, texture, uv } from 'three/tsl';
 
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -13,15 +14,15 @@ import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 
-let camera, scene, renderer;
+import { camera, renderer, floorMaterial } from './scene.js';
+
+let scene;
 let model, mixer = null, clock;
 let controls;
 let stats;
 let gui;
 let box1, box2, box3;
 let textInited = false;
-let textZero1 = null;
-let textZero2 = null;
 const texts = [];
 let font;
 
@@ -163,7 +164,7 @@ for (const pose of poses) {
 const makeText = (text, material) => {
     const bevelEnabled = false;
 
-    const depth = 0.2 * boxSize;
+    const depth = 0.02 * boxSize;
     const size = 0.5 * boxSize;
     const hover = hoverBase;
 
@@ -173,7 +174,6 @@ const makeText = (text, material) => {
     const bevelSize = 0.2 * boxSize;
 
     const textGeo = new TextGeometry(text, {
-
         font: font,
 
         size: size,
@@ -183,15 +183,13 @@ const makeText = (text, material) => {
         bevelThickness: bevelThickness,
         bevelSize: bevelSize,
         bevelEnabled: bevelEnabled
-
     });
 
     textGeo.computeBoundingBox();
 
-    const centerOffset = - 0.5 * (textGeo.boundingBox.max.x - textGeo.boundingBox.min.x);
+    const centerOffset = -0.5 * (textGeo.boundingBox.max.x - textGeo.boundingBox.min.x);
 
     const textMesh = new THREE.Mesh(textGeo, material);
-
     textMesh.position.x = centerOffset;
     textMesh.position.y = hover;
     textMesh.position.z = -depth * 0.5;
@@ -210,13 +208,10 @@ function loadFont() {
     const fontWeight = 'bold'; // normal bold
 
     loader.load('fonts/' + fontName + '_' + fontWeight + '.typeface.json', function (response) {
-
         font = response;
 
-
-        const material = new THREE.MeshPhongMaterial({ color: 0xFFD700 })
-        textZero1 = makeText("$0", material);
-        textZero2 = makeText("$0", material);
+        const material = new THREE.MeshPhongMaterial({ color: 0xFFD700 });
+        texts.push(makeText("$0", material));
         texts.push(makeText("$1", material));
         texts.push(makeText("$2", material));
         texts.push(makeText("$3", material));
@@ -224,24 +219,18 @@ function loadFont() {
         texts.push(makeText("$5", material));
 
         textInited = true;
-        box1.mesh.add(textZero1);
-        box2.mesh.add(textZero2);
-        box3.mesh.add(texts[4]);
-
+        box1.mesh.add(texts[0]);
+        box2.mesh.add(texts[1]);
+        box3.mesh.add(texts[2]);
     });
 
 }
 
 const init = () => {
-
-    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.25, 30);
-    camera.position.set(1, 2.0, 4);
-
     const skycolor = 0x0487e2;
     scene = new THREE.Scene();
     scene.fog = new THREE.Fog(skycolor, 7, 25);
     scene.backgroundNode = normalWorldGeometry.y.mix(color(skycolor), color(0x0066ff));
-    camera.lookAt(0, 1, 0);
 
     const sunLight = new THREE.DirectionalLight(0xFFE499, 5);
     sunLight.position.set(.5, 2, .5);
@@ -250,12 +239,12 @@ const init = () => {
     sunLight.shadow.camera.near = .1;
     sunLight.shadow.camera.far = 5;
     sunLight.shadow.camera.right = 2;
-    sunLight.shadow.camera.left = - 2;
+    sunLight.shadow.camera.left = -2;
     sunLight.shadow.camera.top = 2;
-    sunLight.shadow.camera.bottom = - 2;
+    sunLight.shadow.camera.bottom = -2;
     sunLight.shadow.mapSize.width = 2048;
     sunLight.shadow.mapSize.height = 2048;
-    sunLight.shadow.bias = - 0.01;
+    sunLight.shadow.bias = -0.005;
 
     sunLight.shadow.intensity = 1;
     sunLight.shadow.radius = 3;
@@ -272,7 +261,6 @@ const init = () => {
     // animated model
     const loader = new GLTFLoader();
     loader.load('/models/gltf/Michelle.glb', function (gltf) {
-
         model = gltf.scene;
         model.rotation.x = -Math.PI * 0.5;
         model.position.z = 1;
@@ -284,8 +272,8 @@ const init = () => {
         scene.add(model);
 
         activeAction = playAnimation(initialAnimation);
-
     });
+
     // textures
 
     const textureLoader = new THREE.TextureLoader();
@@ -305,11 +293,10 @@ const init = () => {
     const floorNormalOffset = texture(floorNormal, floorUV).xy.mul(2).sub(1).mul(.02);
 
     const reflection = reflector({ resolution: 0.5 }); // 0.5 is half of the rendering view
-    reflection.target.rotateX(- Math.PI / 2);
+    reflection.target.rotateX(-Math.PI / 2);
     reflection.uvNode = reflection.uvNode.add(floorNormalOffset);
     scene.add(reflection.target);
 
-    const floorMaterial = new THREE.MeshPhongNodeMaterial();
     floorMaterial.colorNode = texture(floorColor, floorUV).add(reflection);
 
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), floorMaterial);
@@ -319,66 +306,58 @@ const init = () => {
     floor.position.set(0, 0, 0);
     scene.add(floor);
 
+    const makeSide = (geometry, material) => {
+        const side = new THREE.Mesh(geometry, material);
+        side.castShadow = true;
+        side.receiveShadow = true;
+        return side;
+    }
+
     const makeBox = (x, z) => {
-        const boxMaterial = new THREE.MeshPhongNodeMaterial(); // Example color
+        const boxMaterial = new THREE.MeshPhongMaterial();
         boxMaterial.map = textureLoader.load('/textures/crate.gif');
+        boxMaterial.map.anisotropy = 4;
+
         boxMaterial.side = THREE.DoubleSide;
 
         const geometry = new THREE.PlaneGeometry(boxSize, boxSize);
 
         const box = new THREE.Group();
+        box.position.set(x, boxSize * 0.5, z);
 
-        const bottom = new THREE.Mesh(geometry, boxMaterial);
-        bottom.position.y = -boxSize * 0.5;
+        const bottom = makeSide(geometry, boxMaterial);
+        bottom.position.y = -boxSize * 0.5 + 0.03;
         bottom.rotation.x = Math.PI * 0.5;
+        box.add(bottom);
 
-        const back = new THREE.Mesh(geometry, boxMaterial);
+        const back = makeSide(geometry, boxMaterial);
         back.position.z = -boxSize * 0.5;
         back.rotation.x = Math.PI;
+        box.add(back);
 
-        const front = new THREE.Mesh(geometry, boxMaterial);
+        const front = makeSide(geometry, boxMaterial);
         front.position.z = boxSize * 0.5;
+        box.add(front);
 
-        const right = new THREE.Mesh(geometry, boxMaterial);
+        const right = makeSide(geometry, boxMaterial);
         right.position.x = boxSize * 0.5;
         right.rotation.y = Math.PI * 0.5;
+        box.add(right);
 
-        const left = new THREE.Mesh(geometry, boxMaterial);
+        const left = makeSide(geometry, boxMaterial);
         left.position.x = -boxSize * 0.5;
         left.rotation.y = -Math.PI * 0.5;
-
-        box.position.set(x, boxSize * 0.5, z);
-        box.castShadow = true;
-        box.receiveShadow = true;
+        box.add(left);
 
         const lid = new THREE.Group();
         lid.position.y = boxSize * 0.5;
         lid.position.z = -boxSize * 0.5;
+        box.add(lid);
 
-        const top = new THREE.Mesh(geometry, boxMaterial);
+        const top = makeSide(geometry, boxMaterial);
         top.position.z = boxSize * 0.5;
         top.rotation.x = -Math.PI * 0.5;
         lid.add(top);
-
-        bottom.castShadow = true;
-        bottom.receiveShadow = true;
-        top.castShadow = true;
-        top.receiveShadow = true;
-        back.castShadow = true;
-        back.receiveShadow = true;
-        front.castShadow = true;
-        front.receiveShadow = true;
-        right.castShadow = true;
-        right.receiveShadow = true;
-        left.castShadow = true;
-        left.receiveShadow = true;
-
-        box.add(bottom);
-        box.add(lid);
-        box.add(back);
-        box.add(front);
-        box.add(right);
-        box.add(left);
 
         scene.add(box);
 
@@ -389,9 +368,7 @@ const init = () => {
     box3 = makeBox(1.5, 0);
 
     loadFont();
-    // renderer
 
-    renderer = new THREE.WebGPURenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setAnimationLoop(animate);
@@ -424,55 +401,56 @@ function onWindowResize() {
 
 }
 
-let open1 = false;
-let open1Time = 0;
-let open2 = false;
-let open2Time = 0;
-let open3 = false;
-let open3Time = 0;
+class BoxState {
+    constructor(box) {
+        this.open = false
+        this.box = box;
+        this.startTime = 0;
+    }
+    animate(text) {
+        if (!this.open) return;
+
+        const time = performance.now();
+        const duration = 1000;
+        const degree = Math.min((time - this.startTime) / duration, 1);
+        const oscillate = 0.5 - Math.cos(degree * Math.PI) * 0.5;
+        this.box.lid.rotation.x = -Math.PI * oscillate * 0.6;
+
+        if (degree === 1) {
+            this.open = false;
+        }
+
+        if (textInited) {
+            const maxHeight = 1.0 * boxSize;
+            text.position.y = hoverBase + oscillate * maxHeight;
+        }
+    }
+}
+const boxes = [];
+boxes.push(new BoxState(box1));
+boxes.push(new BoxState(box2));
+boxes.push(new BoxState(box3));
 
 const raycaster = new THREE.Raycaster();
 function onWindowClick(event) {
     const pointer = new THREE.Vector2();
     pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
+    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
     raycaster.setFromCamera(pointer, camera);
     const intersects = raycaster.intersectObjects(scene.children);
-    const intersect = intersects[0];
-    if (intersect) {
-        let object = intersect.object;
-        while (object) {
-            if (object === box1.mesh) {
-                open1 = true;
-                open1Time = performance.now();
+
+    let object = intersects[0]?.object;
+    while (object) {
+        for (const boxState of boxes) {
+            if (object === boxState.box.mesh) {
+                boxState.open = true;
+                boxState.startTime = performance.now();
+                object = null;
                 break;
             }
-            if (object === box2.mesh) {
-                open2 = true;
-                open2Time = performance.now();
-                break;
-            }
-            if (object === box3.mesh) {
-                open3 = true;
-                open3Time = performance.now();
-                break;
-            }
-            object = object.parent;
         }
-    }
-}
-
-const animateBox = (box, text, start) => {
-    const time = performance.now();
-    const duration = 1000;
-    const degree = Math.min((time - start) / duration, 1);
-    const oscillate = 0.5 - Math.cos(degree * Math.PI) * 0.5;
-    box.lid.rotation.x = -Math.PI * oscillate * 0.6;
-
-    if (textInited) {
-        const maxHeight = 1.4 * boxSize;
-        text.position.y = hoverBase + oscillate * maxHeight;
+        if (object) object = object.parent;
     }
 }
 
@@ -490,14 +468,9 @@ function animate() {
 
     }
 
-    if (open1) {
-        animateBox(box1, textZero1, open1Time);
-    }
-    if (open2) {
-        animateBox(box2, textZero2, open2Time);
-    }
-    if (open3) {
-        animateBox(box3, texts[4], open3Time);
+    let i = 0
+    for (const boxState of boxes) {
+        boxState.animate(texts[i++]);
     }
 
     renderer.render(scene, camera);
