@@ -3,10 +3,10 @@
     // other options...
     "paths": {
       "three/webgpu": [
-        "node_modules/three/build/three.webgpu.js"
+        "./node_modules/three/build/three.webgpu.js"
       ],
       "three/tsl": [
-        "node_modules/three/build/three.tsl.js"
+        "./node_modules/three/build/three.tsl.js"
       ],
     },
   }
