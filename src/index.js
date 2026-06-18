@@ -71,7 +71,7 @@ const loader = new FBXLoader();
 const addAnimation = (looping, name, fileName, play = false) => {
     if (looping) stances.push(name);
     else poses.push(name);
-    loader.load(`/animations/${fileName}`, (modelAnimation) => {
+    loader.load(`./animations/${fileName}`, (modelAnimation) => {
         const animation = new Animation(name, modelAnimation.animations[0], looping);
         animations.set(name, animation);
         if (play) {
@@ -260,7 +260,7 @@ const init = () => {
 
     // animated model
     const loader = new GLTFLoader();
-    loader.load('/models/gltf/Michelle.glb', function (gltf) {
+    loader.load('./models/gltf/Michelle.glb', function (gltf) {
         model = gltf.scene;
         model.rotation.x = -Math.PI * 0.5;
         model.position.z = 1;
@@ -278,12 +278,12 @@ const init = () => {
 
     const textureLoader = new THREE.TextureLoader();
 
-    const floorColor = textureLoader.load('/textures/floors/FloorsCheckerboard_S_Diffuse.jpg');
+    const floorColor = textureLoader.load('./textures/floors/FloorsCheckerboard_S_Diffuse.jpg');
     floorColor.wrapS = THREE.RepeatWrapping;
     floorColor.wrapT = THREE.RepeatWrapping;
     floorColor.colorSpace = THREE.SRGBColorSpace;
 
-    const floorNormal = textureLoader.load('/textures/floors/FloorsCheckerboard_S_Normal.jpg');
+    const floorNormal = textureLoader.load('./textures/floors/FloorsCheckerboard_S_Normal.jpg');
     floorNormal.wrapS = THREE.RepeatWrapping;
     floorNormal.wrapT = THREE.RepeatWrapping;
 
@@ -315,7 +315,7 @@ const init = () => {
 
     const makeBox = (x, z) => {
         const boxMaterial = new THREE.MeshPhongMaterial();
-        boxMaterial.map = textureLoader.load('/textures/crate.gif');
+        boxMaterial.map = textureLoader.load('./textures/crate.gif');
         boxMaterial.map.anisotropy = 4;
 
         boxMaterial.side = THREE.DoubleSide;
