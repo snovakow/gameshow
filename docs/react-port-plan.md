@@ -241,7 +241,7 @@ Read docs/react-port-plan.md: section 2, Phase 6 and Appendices A, B and C. Carr
 
 **The work**
 
-- `Host`: `models/gltf/Michelle.glb` placed and turned as Appendix A says, cloned before anything on it changes, with shadows on its skinned mesh found by type rather than by its position in the hierarchy (items 8 and 10; B5).
+- `Host`: `models/gltf/Michelle.glb` placed and turned as Appendix A says, cloned before anything on it changes, with shadows on its skinned mesh found by type rather than by its position in the hierarchy (items 8 and 10; B5). It blocks clicks, as in the prototype, so a click on the host never opens a crate behind it (item 11).
 - `useHostAnimations`: the nine FBX clips loaded with three's own `FBXLoader`, each clip cloned and named, the mixer and actions from drei's `useAnimations`, and the prototype's fades: stances loop, poses play once and hold their last frame, and a finished pose fades back to the current stance (item 9). Nothing runs before the model and its clips are in (B3).
 - The panel, in leva (D3): a Stances folder with Duration and Stance, and a Poses folder with Duration and a button per pose, with Appendix A's ranges and defaults.
 
@@ -258,7 +258,7 @@ Read docs/react-port-plan.md in full. Carry out Phase 7 only: review the finishe
 **The work**
 
 - Go through Appendix A line by line against the code. Fix what differs unintentionally, and list the deliberate differences, such as D3, D7 and the Appendix B fixes.
-- Remove leftovers: template files or text (the Vite and React logos, "Vite + React", `App.css`), dependencies nothing imports (compare `npm ls --depth=0` with the imports), `any` or lint suppressions without a stated reason, and `console.log`.
+- Remove leftovers: template files or text (the Vite and React logos, "Vite + React", `App.css`), dependencies nothing imports (compare `npm ls --depth=0` with the imports), `any` or lint suppressions without a stated reason, and `console.log`. That includes `src/stage/renderer.ts` if nothing calls `asWebGPU()` by then: section 1 lists it, but no phase may end up needing the renderer's own API.
 - README.md, for a public reader. Keep the stack line, the Stack table and the Workflow section, and bring the rest up to date: what Gameshow is, the live demo, what's in it, the controls, running and building it (`npm run build` makes a static site in `dist/` that works from any folder), its status (the rebuild is done and the live demo runs it, as a present fact, since Phase 8 merges and deploys straight after this phase), and credits. No file paths or internal values; keep the existing voice. Keep the link to this plan for now; Phase 8 removes it.
 
 **You** Walk the agent's checklist in `npm run dev` and again in `npm run preview`. Then, in a fresh thread, run `/commit Phase 7 of docs/react-port-plan.md`.
@@ -400,7 +400,7 @@ Checked against the source of `@react-three/fiber` 9.8.2, `@react-three/drei` 10
    - Read the renderer, scene, camera and controls through `const get = useThree((s) => s.get)`, calling `get()` inside effects and handlers.
    - Mutate per-frame state, such as a lid's rotation, through refs inside `useFrame`.
 10. **Animations.** drei's `useAnimations(clips, ref)` returns the mixer and an action per clip name. Set each action's loop once (`LoopRepeat` for stances; `LoopOnce` with `clampWhenFinished` for poses), and fade as Appendix A says. Add the mixer's `finished` listener in an effect and remove it in the cleanup.
-11. **R3F's pointer events.** Only objects with handlers are raycast, and events come only from the canvas, so a click on the leva panel never reaches the stage. Put `onClick` on each crate's group and call `e.stopPropagation()`, so a click opens only the nearest crate.
+11. **R3F's pointer events.** Only objects with handlers are raycast, and events come only from the canvas, so a click on the leva panel never reaches the stage. Put `onClick` on each crate's group and call `e.stopPropagation()`, so a click opens only the nearest crate. Objects without handlers aren't hit at all, so the host needs an `onClick` that only calls `e.stopPropagation()` to block clicks the way it did in the prototype, whose raycast took the first object hit.
 12. **Nothing allocates per frame.** Inside `useFrame`, reuse vectors and other objects through refs or module scope, and read time from R3F's clock.
 13. **Public assets need the base prefix.** With `base: ''`, reference files in `public/` as `` `${import.meta.env.BASE_URL}models/gltf/Michelle.glb` ``, never with a leading `/`. Some clip files have spaces in their names; the browser encodes them, so they load as they are.
 14. **Versions.** Everything installs at its latest (D14). `npm ls three` should show one three: fiber, drei and three-stdlib take it as a peer, and the `$three` override folds in the copy drei's `stats-gl` would otherwise bring. `@types/three` comes from the same release. TypeScript 7 builds the template's tsconfig unchanged, and Oxlint's type-aware rules run on it. React has to stay within R3F 9's peer range (19.0 to 19.3), and `@types/node` follows the Node in use (24). After that, `npm outdated` should list only `@types/node`.
