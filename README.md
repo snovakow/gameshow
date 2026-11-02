@@ -48,7 +48,9 @@ The rebuild onto this stack is in progress. The live demo and the code on `main`
 
 ## Running it locally
 
-You need Node.js 22.12 or later. Then run `npm install`, followed by `npm run dev`.
+You need Node.js 22.12 or later. Then run `npm install`, followed by `npm run dev`, and open the address it prints.
+
+`npm run lint` and `npm run typecheck` check the code, `npm run build` writes a static build to `dist/`, and `npm run preview` serves that build.
 
 ## Credits
 
