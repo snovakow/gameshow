@@ -3,7 +3,7 @@ import { create } from 'zustand'
 export interface CrateState {
   prize: string
   open: boolean
-  // Bumped on every opening, so clicking an open crate swings its lid again (B8)
+  // Bumped on every opening, so clicking an open crate swings its lid again
   openings: number
 }
 
