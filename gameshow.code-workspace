@@ -1,8 +1,17 @@
 {
 	"folders": [
 		{
-			"path": "src"
+			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"files.exclude": {
+			"**/.vscode": true,
+			"**/dist": true,
+			"**/node_modules": true
+		},
+		"search.exclude": {
+			"**/public": true
+		}
+	}
 }
