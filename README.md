@@ -19,7 +19,7 @@ Gameshow is a 3D game-show stage in the browser, being built toward a game of th
 
 Around them are drei's helpers, a leva control panel, zustand for game state, and Oxlint for linting.
 
-The rebuild onto this stack is in progress. The live demo and the code on `main` are still the original version: plain three.js on WebGPU in JavaScript, built with Vite.
+Gameshow started as plain three.js in JavaScript, and has been rebuilt onto this stack. The live demo runs the rebuild; the original version stays in the repository's history.
 
 ## What's in it
 
@@ -27,20 +27,23 @@ The rebuild onto this stack is in progress. The live demo and the code on `main`
 - **Three crates**, each hiding a prize amount that rises out of it when you open the lid.
 - **A reflective floor** under a sunny sky, with soft shadows and fog in the distance.
 - **A control panel** for choosing the host's stance, triggering reactions, and setting how quickly the animations blend.
+- **A frame-rate meter** in the corner.
 
 ## Controls
 
-| To | Do this |
-| --- | --- |
-| Look around | Drag with the left mouse button |
-| Zoom | Scroll |
-| Pan | Drag with the right mouse button |
-| Open a crate | Click it |
-| Change the host's stance or cue a reaction | Use the control panel |
+| To | With a mouse | On a touchscreen |
+| --- | --- | --- |
+| Look around | Drag with the left button | Drag with one finger |
+| Zoom | Scroll | Pinch |
+| Pan | Drag with the right button | Drag with two fingers |
+| Open a crate | Click it | Tap it |
+| Change the host's stance or cue a reaction | Use the control panel | Use the control panel |
+
+Looking around stops at the horizon, and the zoom has limits either way.
 
 ## Workflow
 
-- **Planned in phases.** The rebuild follows a [written plan](docs/react-port-plan.md). Each phase is one focused thread, and the phases that change code end with lint and a type-checked production build passing.
+- **Planned in phases.** The rebuild followed a [written plan](docs/react-port-plan.md). Each phase was one focused thread, and the phases that changed code ended with lint and a type-checked production build passing.
 - **Reviewed before it's committed.** Every batch of work goes through `/commit`, a [Claude Code skill](.claude/skills/commit/SKILL.md) that serves as the final code review. It's adapted from a shared [baseline](https://github.com/snovakow/Claude-Skills/tree/main/skills/commit), and it runs in a fresh thread, so the review starts without the author's assumptions. It reads every changed line for bugs, React Three Fiber and three.js pitfalls, type and lint escapes, new dependencies, leftovers and anything that shouldn't be public. Then it runs the checks, splits the work into focused commits with descriptive messages, and keeps this README accurate.
 - **Versioned checkpoints.** Versions continue from the prototype's 0.0.0: each reviewed batch ends with a version commit, which marks where the next review starts.
 - **Current dependencies.** Packages and tools track their latest releases, and each review reports anything that has fallen behind.
@@ -48,12 +51,12 @@ The rebuild onto this stack is in progress. The live demo and the code on `main`
 
 ## Running it locally
 
-You need Node.js 22.12 or later. Then run `npm install`, followed by `npm run dev`, and open the address it prints.
+You need Node.js 22.12 or later, and a browser with WebGPU or WebGL 2. Then run `npm install`, followed by `npm run dev`, and open the address it prints.
 
-`npm run lint` and `npm run typecheck` check the code, `npm run build` writes a static build to `dist/`, and `npm run preview` serves that build.
+`npm run lint` and `npm run typecheck` check the code. `npm run build` makes a static site in `dist/`. It uses relative paths, so it works from any folder you copy it to, and `npm run preview` serves it locally.
 
 ## Credits
 
-- [three.js](https://threejs.org), including the host model and the reflection technique from its examples.
-- The host's animations come from Mixamo.
-- The MgOpen typefaces, under the MAGENTA licence included with them; the Droid fonts, under the Apache License 2.0; Gentilis, from SIL's Gentium, under the SIL Open Font License; and Kenney Fonts.
+- [three.js](https://threejs.org), including the host model, the textures, the typefaces and the reflection technique from its examples.
+- The host's animations come from [Mixamo](https://www.mixamo.com).
+- The MgOpen typefaces, under the MAGENTA licence included with them; the Droid fonts, under the Apache License 2.0; Gentilis, from SIL's Gentium, under the SIL Open Font License; and Kenney Fonts, in the public domain.
