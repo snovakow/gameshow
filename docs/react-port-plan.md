@@ -37,7 +37,7 @@ Gone: `vite.config.js` with its `root: "src"` layout; `src/index.html` with an i
 
 Scripts: `dev`, `build` (`tsc -b && vite build`), `preview`, `lint`, `lint:fix`, `typecheck`.
 
-The prototype stays readable at the `legacy-vanilla` tag made in Phase 0, for example `git show legacy-vanilla:src/index.js`.
+The prototype stays readable at commit `2655da8`, the last before the port, for example `git show 2655da8:src/index.js`.
 
 ## 2. Decisions
 
@@ -84,8 +84,10 @@ Node and npm are installed for the whole Mac, so Bounder's port already did step
 
    ```sh
    sudo npm install -g npm@latest
-   node -v && npm -v    # v24.22.2 or a later 24.x, and 12.x
+   node -v && npm -v
    ```
+
+   Expect v24.22.2 or a later 24.x, and 12.x.
 
    `sudo npm` can leave root-owned files in your npm cache, and then later installs fail with `EACCES` under `~/.npm/_cacache`. Hand the cache back to yourself:
 
@@ -95,15 +97,14 @@ Node and npm are installed for the whole Mac, so Bounder's port already did step
 
 3. **git**, optionally. Apple's 2.37.1 is the newest its command-line tools offer on macOS 12, and the current release is 2.56. Homebrew supports macOS 12 only at its lowest tier, building from source, and MacPorts is the other route. The `/commit` skill works with 2.37 either way.
 
-### Phase 0: switch to development, commit this plan and the skill, tag the prototype, and push
+### Phase 0: switch to development, commit this plan and the skill, and push
 
 **You**
 
 1. Work lands on `development` and reaches `main` by merge. GitHub has a `development` branch level with `main`; check it out: in GitHub Desktop, choose **Current Branch → `development`**. If Desktop asks what to do with your uncommitted changes, bring them to `development`.
 
 2. In a fresh Claude Code thread here, run `/commit Plan and tooling for the React port`. Expect separate commits for the `/commit` skill, the public README, this plan, and the workspace, which now opens the repository root instead of `src/` and replaces the deleted `src/.vscode/settings.json` (Phase 3's step 7, done ahead). There's no version commit yet: the prototype's `package.json` is about to be replaced, so the first one waits for the template's, in Phase 2 (D10). Nothing here changes code, so no checks need to run; the prototype's `test` script is npm's placeholder, which always fails.
-3. Tag the result, so the prompts can still read the prototype after its files are deleted. In GitHub Desktop's History tab, right-click the newest commit, the run's last, choose **Create Tag…**, and name it `legacy-vanilla`. Desktop pushes the tags it creates with the next push, so it goes to GitHub with the branch.
-4. Push `development`: click **Push origin**.
+3. Push `development`: click **Push origin**.
 
    Until the first version commit, a run's baseline is the newest pushed commit, so pushing is what closes this run. Without the push, Phase 2's run would ask about these commits before reading them; answering that it should keep them all, as already reviewed, does the same.
 
@@ -116,11 +117,11 @@ GitHub Desktop's Changes tab should show no changes. Then, in a terminal:
 ```sh
 mv src/public public
 rm package.json package-lock.json vite.config.js src/index.html src/index.js src/scene.js src/main.css
-rm -f src/.DS_Store    # Finder's, git-ignored
-rmdir src    # fails if anything is left
+rm -f src/.DS_Store
+rmdir src
 ```
 
-The Changes tab now shows the seven prototype files deleted and the 30 assets moved from `src/public/` to `public/`. If an old `node_modules` folder is here from the vanilla setup, delete it with `rm -rf node_modules`; Phase 2 installs afresh. Don't commit yet; Phase 2's `/commit` commits both phases together.
+`src/.DS_Store` is Finder's, and git ignores it. `rmdir` fails if anything else is left in `src/`. The Changes tab now shows the seven prototype files deleted and the 30 assets moved from `src/public/` to `public/`. If an old `node_modules` folder is here from the vanilla setup, delete it with `rm -rf node_modules`; Phase 2 installs afresh. Don't commit yet; Phase 2's `/commit` commits both phases together.
 
 ### Phase 2: scaffold Vite in place and install the 3D stack
 
@@ -168,7 +169,7 @@ The Changes tab now shows the seven prototype files deleted and the 30 assets mo
 **Prompt**
 
 ```text
-Read docs/react-port-plan.md: sections 1 and 2, Phase 3, and Appendix C. Carry out Phase 3 only: turn the fresh create-vite scaffold into Gameshow's app shell and tooling. The prototype's code is at the legacy-vanilla tag (git show legacy-vanilla:<file>). If the plan turns out to be wrong or impossible somewhere, stop and tell me instead of improvising. Don't commit. Finish with npm run lint, npm run typecheck and npm run build passing, then summarise what changed and anything you couldn't do.
+Read docs/react-port-plan.md: sections 1 and 2, Phase 3, and Appendix C. Carry out Phase 3 only: turn the fresh create-vite scaffold into Gameshow's app shell and tooling. The prototype's code is at commit 2655da8 (git show 2655da8:<file>). If the plan turns out to be wrong or impossible somewhere, stop and tell me instead of improvising. Don't commit. Finish with npm run lint, npm run typecheck and npm run build passing, then summarise what changed and anything you couldn't do.
 ```
 
 **The work**
@@ -195,7 +196,7 @@ Read docs/react-port-plan.md: sections 1 and 2, Phase 3, and Appendix C. Carry o
 **Prompt**
 
 ```text
-Read docs/react-port-plan.md: section 2, Phase 4 and Appendices A, B and C. Carry out Phase 4 only: port the renderer, camera, controls, lights, fog, background and reflective floor from src/index.js and src/scene.js to React Three Fiber. The prototype's code is at the legacy-vanilla tag (git show legacy-vanilla:<file>). Match Appendix A's values exactly. If the plan turns out to be wrong or impossible somewhere, stop and tell me instead of improvising. Don't commit. Finish with npm run lint and npm run build passing, then summarise, listing anything that doesn't match Appendix A and what I should look at in the browser.
+Read docs/react-port-plan.md: section 2, Phase 4 and Appendices A, B and C. Carry out Phase 4 only: port the renderer, camera, controls, lights, fog, background and reflective floor from src/index.js and src/scene.js to React Three Fiber. The prototype's code is at commit 2655da8 (git show 2655da8:<file>). Match Appendix A's values exactly. If the plan turns out to be wrong or impossible somewhere, stop and tell me instead of improvising. Don't commit. Finish with npm run lint and npm run build passing, then summarise, listing anything that doesn't match Appendix A and what I should look at in the browser.
 ```
 
 **The work**
@@ -219,7 +220,7 @@ Read docs/react-port-plan.md: section 2, Phase 4 and Appendices A, B and C. Carr
 **Prompt**
 
 ```text
-Read docs/react-port-plan.md: section 2, Phase 5 and Appendices A, B and C. Carry out Phase 5 only: port the crates, their lids and the prize text from src/index.js. The prototype's code is at the legacy-vanilla tag (git show legacy-vanilla:<file>). Match Appendix A's values exactly. If the plan turns out to be wrong or impossible somewhere, stop and tell me instead of improvising. Don't commit. Finish with npm run lint and npm run build passing, then summarise, listing anything that doesn't match Appendix A and what I should look at in the browser.
+Read docs/react-port-plan.md: section 2, Phase 5 and Appendices A, B and C. Carry out Phase 5 only: port the crates, their lids and the prize text from src/index.js. The prototype's code is at commit 2655da8 (git show 2655da8:<file>). Match Appendix A's values exactly. If the plan turns out to be wrong or impossible somewhere, stop and tell me instead of improvising. Don't commit. Finish with npm run lint and npm run build passing, then summarise, listing anything that doesn't match Appendix A and what I should look at in the browser.
 ```
 
 **The work**
@@ -235,7 +236,7 @@ Read docs/react-port-plan.md: section 2, Phase 5 and Appendices A, B and C. Carr
 **Prompt**
 
 ```text
-Read docs/react-port-plan.md: section 2, Phase 6 and Appendices A, B and C. Carry out Phase 6 only: port the animated host and the stance and pose panel from src/index.js. The prototype's code is at the legacy-vanilla tag (git show legacy-vanilla:<file>). Match Appendix A's values exactly. If the plan turns out to be wrong or impossible somewhere, stop and tell me instead of improvising. Don't commit. Finish with npm run lint and npm run build passing, then summarise, listing anything that doesn't match Appendix A and what I should try in the browser.
+Read docs/react-port-plan.md: section 2, Phase 6 and Appendices A, B and C. Carry out Phase 6 only: port the animated host and the stance and pose panel from src/index.js. The prototype's code is at commit 2655da8 (git show 2655da8:<file>). Match Appendix A's values exactly. If the plan turns out to be wrong or impossible somewhere, stop and tell me instead of improvising. Don't commit. Finish with npm run lint and npm run build passing, then summarise, listing anything that doesn't match Appendix A and what I should try in the browser.
 ```
 
 **The work**
@@ -251,7 +252,7 @@ Read docs/react-port-plan.md: section 2, Phase 6 and Appendices A, B and C. Carr
 **Prompt**
 
 ```text
-Read docs/react-port-plan.md in full. Carry out Phase 7 only: review the finished port against Appendices A, B and C and the prototype at the legacy-vanilla tag (git show legacy-vanilla:<file>), fix differences that aren't intended, remove leftovers, and bring README.md up to date for the public. Don't commit. Finish with npm run lint, npm run typecheck and npm run build passing; then serve the build with npm run preview and confirm that the page and every asset it references load with HTTP 200 (curl is fine). Summarise what you fixed, what still differs from Appendix A and why, and give me a checklist to walk through in the browser.
+Read docs/react-port-plan.md in full. Carry out Phase 7 only: review the finished port against Appendices A, B and C and the prototype at commit 2655da8 (git show 2655da8:<file>), fix differences that aren't intended, remove leftovers, and bring README.md up to date for the public. Don't commit. Finish with npm run lint, npm run typecheck and npm run build passing; then serve the build with npm run preview and confirm that the page and every asset it references load with HTTP 200 (curl is fine). Summarise what you fixed, what still differs from Appendix A and why, and give me a checklist to walk through in the browser.
 ```
 
 **The work**
@@ -266,7 +267,7 @@ Read docs/react-port-plan.md in full. Carry out Phase 7 only: review the finishe
 
 **You**
 
-1. Delete this plan. Read the rest of this phase first; afterwards it is only in git history. The `legacy-vanilla` tag holds Phase 0's copy, not the finished one; `git show $(git rev-list -n 1 HEAD -- docs/react-port-plan.md)^:docs/react-port-plan.md` prints the last version before the deletion.
+1. Delete this plan. Read the rest of this phase first; afterwards it is only in git history. `git show $(git rev-list -n 1 HEAD -- docs/react-port-plan.md)^:docs/react-port-plan.md` prints the last version before the deletion.
 
    ```sh
    rm docs/react-port-plan.md
@@ -287,12 +288,6 @@ Read docs/react-port-plan.md in full. Carry out Phase 7 only: review the finishe
 
    Replace the contents of `~/Sites/localhost/live/gameshow/` with those of `dist/`, then publish `live/` to snovakow.com the way you do for the other sites. The new build has the same asset folders plus a fresh `assets/`, so the old `assets/` files can go.
 4. Open https://snovakow.com/gameshow/ and check that the stage loads with no 404s, and that the Network panel shows gtag.
-5. Optionally, delete the tag once you no longer need it. GitHub Desktop deletes only tags that haven't been pushed, and this one went to GitHub in Phase 0, so it takes the command line:
-
-   ```sh
-   git tag -d legacy-vanilla
-   git push origin --delete legacy-vanilla
-   ```
 
 ## 5. The /commit skill
 
