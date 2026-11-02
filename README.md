@@ -48,7 +48,7 @@ The rebuild onto this stack is in progress. The live demo and the code on `main`
 
 ## Running it locally
 
-You need Node.js 20.19 or later. Then run `npm install`, followed by `npm run dev`.
+You need Node.js 22.12 or later. Then run `npm install`, followed by `npm run dev`.
 
 ## Credits
 
