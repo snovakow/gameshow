@@ -43,7 +43,7 @@ Looking around stops at the horizon, and the zoom has limits either way.
 
 ## Workflow
 
-- **Planned in phases.** The rebuild followed a [written plan](docs/react-port-plan.md). Each phase was one focused thread, and the phases that changed code ended with lint and a type-checked production build passing.
+- **Planned in phases.** The rebuild followed a written plan. Each phase was one focused thread, and the phases that changed code ended with lint and a type-checked production build passing.
 - **Reviewed before it's committed.** Every batch of work goes through `/commit`, a [Claude Code skill](.claude/skills/commit/SKILL.md) that serves as the final code review. It's adapted from a shared [baseline](https://github.com/snovakow/Claude-Skills/tree/main/skills/commit), and it runs in a fresh thread, so the review starts without the author's assumptions. It reads every changed line for bugs, React Three Fiber and three.js pitfalls, type and lint escapes, new dependencies, leftovers and anything that shouldn't be public. Then it runs the checks, splits the work into focused commits with descriptive messages, and keeps this README accurate.
 - **Versioned checkpoints.** Versions continue from the prototype's 0.0.0: each reviewed batch ends with a version commit, which marks where the next review starts.
 - **Current dependencies.** Packages and tools track their latest releases, and each review reports anything that has fallen behind.
