@@ -22,8 +22,8 @@ gameshow/
 │   ├── App.tsx                 the <Canvas> and the DOM overlays
 │   ├── index.css               full-window layout, the page's colours and type
 │   ├── store.ts                zustand: crate and game state
-│   └── stage/                  Stage, renderer.ts (the WebGPU renderer guard), Lights, Backdrop,
-│                               Floor, Crate, Prize, Host, useHostAnimations
+│   └── stage/                  Stage, Lights, Backdrop, Floor, Crate, Prize, Host,
+│                               useHostAnimations
 ├── index.html                  title, analytics, #root
 ├── vite.config.ts              base: '' for relative asset paths
 ├── .oxlintrc.json              lint rules (D1)
@@ -258,7 +258,7 @@ Read docs/react-port-plan.md in full. Carry out Phase 7 only: review the finishe
 **The work**
 
 - Go through Appendix A line by line against the code. Fix what differs unintentionally, and list the deliberate differences, such as D3, D7 and the Appendix B fixes.
-- Remove leftovers: template files or text (the Vite and React logos, "Vite + React", `App.css`), dependencies nothing imports (compare `npm ls --depth=0` with the imports), `any` or lint suppressions without a stated reason, and `console.log`. That includes `src/stage/renderer.ts` if nothing calls `asWebGPU()` by then: section 1 lists it, but no phase may end up needing the renderer's own API.
+- Remove leftovers: template files or text (the Vite and React logos, "Vite + React", `App.css`), dependencies nothing imports (compare `npm ls --depth=0` with the imports), `any` or lint suppressions without a stated reason, `console.log`, and references to this plan's labels, such as "(B8)" in `src/store.ts`, which point nowhere once Phase 8 deletes the plan. Leftovers also include `src/stage/renderer.ts` if nothing calls `asWebGPU()` by then: section 1 lists it, but no phase may end up needing the renderer's own API.
 - README.md, for a public reader. Keep the stack line, the Stack table and the Workflow section, and bring the rest up to date: what Gameshow is, the live demo, what's in it, the controls, running and building it (`npm run build` makes a static site in `dist/` that works from any folder), its status (the rebuild is done and the live demo runs it, as a present fact, since Phase 8 merges and deploys straight after this phase), and credits. No file paths or internal values; keep the existing voice. Keep the link to this plan for now; Phase 8 removes it.
 
 **You** Walk the agent's checklist in `npm run dev` and again in `npm run preview`. Then, in a fresh thread, run `/commit Phase 7 of docs/react-port-plan.md`.
