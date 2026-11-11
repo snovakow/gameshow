@@ -2,7 +2,7 @@
 
 **TypeScript + React + three.js + React Three Fiber + Vite + WebGPU**
 
-Gameshow is a 3D game-show stage in the browser, being built toward a game of the Monty Hall problem: three crates, one prize, and the question of whether to switch. Today the stage is set, with a host, three crates you can open to reveal what's inside, and a mirror-like floor. The game's rules are still to come.
+Gameshow is a 3D game-show stage in the browser, being built toward a game of the Monty Hall problem: three crates, one prize, and the question of whether to switch. Today the stage is set, with a host, three crates you can open to reveal what's inside, and a mirror-like floor. The game's rules are written and tested, but aren't on the stage yet.
 
 **Live demo:** [snovakow.com/gameshow](https://snovakow.com/gameshow/)
 
@@ -51,9 +51,9 @@ Looking around stops at the horizon, and the zoom has limits either way.
 
 ## Running it locally
 
-You need Node.js 22.12 or later, and a browser with WebGPU or WebGL 2. Then run `npm install`, followed by `npm run dev`, and open the address it prints.
+You need Node.js 22.18 or later, and a browser with WebGPU or WebGL 2. Then run `npm install`, followed by `npm run dev`, and open the address it prints.
 
-`npm run lint` and `npm run typecheck` check the code. `npm run build` makes a static site in `dist/`. It uses relative paths, so it works from any folder you copy it to, and `npm run preview` serves it locally.
+`npm run lint` and `npm run typecheck` check the code, and `npm test` runs the tests. `npm run build` makes a static site in `dist/`. It uses relative paths, so it works from any folder you copy it to, and `npm run preview` serves it locally.
 
 ## Credits
 

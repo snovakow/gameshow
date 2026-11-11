@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "typecheck": "tsc -b",
+    "test": "node --test \"src/**/*.test.ts\"",
     "lint:fix": "oxlint --fix"
   },
   "dependencies": {
