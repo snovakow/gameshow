@@ -298,6 +298,20 @@ body {
   transform: translateX(-50%);
 }
 
+/* Moved in from its place above the host, so the tail would point at nothing */
+.bubble.moved::after {
+  display: none;
+}
+
+/* The page less the safe-area insets, which the bubble measures to stay within */
+.safe-area {
+  position: fixed;
+  inset: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  visibility: hidden;
+  pointer-events: none;
+}
+
 @keyframes bubble-in {
   from {
     opacity: 0;

@@ -26,7 +26,7 @@ Gameshow started as plain three.js in JavaScript, and has been rebuilt onto this
 - **A title card** with a loading bar while the host and her moves arrive, and the button that starts the show once they have.
 - **A game show in rounds.** The host welcomes you, explains the rules and announces each round's prize. You pick one of three numbered crates. In the Monty Hall game she then opens an empty crate and offers you the choice to stay with your pick or switch to the other closed one; in the simple game your pick is your answer. A pause for suspense, then the reveal, and the other crates open to show where the prize was.
 - **Two ways to set the prizes.** A fixed ladder of prizes that rise round by round, or prizes set as the show goes, so the total always lands within a range, with a bonus at the end if it falls short.
-- **A host** who idles in one of several stances, dances when you win and sulks when you lose. Her lines appear in a speech bubble above her.
+- **A host** who idles in one of several stances, dances when you win and sulks when you lose. Her lines appear in a speech bubble above her, which never leaves the screen: wherever the view turns, it is moved in from the edge, or clear of the buttons and the tab, only as far as it needs to be.
 - **Three crates** whose lids swing open and shut, raising a gold prize or a grey $0 as they open. A gold ring on the floor marks your pick.
 - **A tab** that keeps the round and the prize in play, a line for each round you've played, how staying and switching have each paid off in the Monty Hall game, and your total. At the end it stays up as your receipt.
 - **A reflective floor** under a sunny sky, with soft shadows and fog in the distance.

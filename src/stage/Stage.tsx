@@ -75,7 +75,7 @@ export function Stage() {
         <Host />
       </Suspense>
       <SpeechBubble />
-      <Stats />
+      <Stats className="meter" />
     </>
   )
 }
