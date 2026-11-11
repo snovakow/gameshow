@@ -23,14 +23,16 @@ Gameshow started as plain three.js in JavaScript, and has been rebuilt onto this
 
 ## What's in it
 
+- **A title card** with a loading bar while the host and her moves arrive, and the button that starts the show once they have.
 - **A game show in rounds.** The host welcomes you, explains the rules and announces each round's prize. You pick one of three numbered crates. In the Monty Hall game she then opens an empty crate and offers you the choice to stay with your pick or switch to the other closed one; in the simple game your pick is your answer. A pause for suspense, then the reveal, and the other crates open to show where the prize was.
 - **Two ways to set the prizes.** A fixed ladder of prizes that rise round by round, or prizes set as the show goes, so the total always lands within a range, with a bonus at the end if it falls short.
 - **A host** who idles in one of several stances, dances when you win and sulks when you lose. Her lines appear in a speech bubble above her.
 - **Three crates** whose lids swing open and shut, raising a gold prize or a grey $0 as they open. A gold ring on the floor marks your pick.
-- **A tab** that keeps the round, the prize in play and your total.
+- **A tab** that keeps the round and the prize in play, a line for each round you've played, how staying and switching have each paid off in the Monty Hall game, and your total. At the end it stays up as your receipt.
 - **A reflective floor** under a sunny sky, with soft shadows and fog in the distance.
 - **A camera** that frames the crates, the ring that marks your pick, the host and her speech bubble on any screen, through a wider lens on a phone held upright, and frames them again when the screen turns or resizes.
-- **A control panel** for choosing the game, its prizes and how many rounds the next show plays, the host's stance, and her reactions and how quickly they blend.
+- **Made for phones first.** Buttons big enough for a thumb, a layout for each way the phone is held, with the tab in a corner on a wide screen and above the buttons on a tall one, all of it clear of a notch and the home bar.
+- **A control panel** for choosing the game, its prizes and how many rounds the next show plays, the host's stance, and her reactions and how quickly they blend. It starts folded away on a phone.
 - **A frame-rate meter** in the corner.
 
 ## Controls
@@ -59,6 +61,8 @@ Looking around stops at the horizon, and the zoom has limits either way. A press
 ## Running it locally
 
 You need Node.js 22.18 or later, and a browser with WebGPU or WebGL 2. Then run `npm install`, followed by `npm run dev`, and open the address it prints.
+
+To try it on a phone, run `npm run dev -- --host` instead and open the network address it prints on a phone on the same Wi-Fi. Over plain HTTP the phone renders with WebGL 2.
 
 `npm run lint` and `npm run typecheck` check the code, and `npm test` runs the tests. `npm run build` makes a static site in `dist/`. It uses relative paths, so it works from any folder you copy it to, and `npm run preview` serves it locally.
 

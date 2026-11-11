@@ -15,8 +15,19 @@ body {
   overscroll-behavior: none;
 }
 
-/* The show's buttons and tab, over the canvas; only the controls themselves take presses */
+/* The show's title card, tab and buttons, over the canvas; only the controls themselves take
+   presses. The safe-area insets, which viewport-fit=cover in index.html makes the browser report,
+   keep all of it clear of a notch and the home bar: each edge keeps the gutter or the inset,
+   whichever is wider */
 .hud {
+  --gutter: 16px;
+  --edge-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+  --edge-bottom: max(var(--gutter), env(safe-area-inset-bottom, 0px));
+  --edge-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  /* A button's height, at least the 44 px a fingertip needs */
+  --button: 48px;
+  --gold: #ffd700;
+  --panel: rgb(20 20 40 / 85%);
   position: fixed;
   inset: 0;
   z-index: 30;
@@ -27,19 +38,24 @@ body {
 .hud .buttons {
   position: absolute;
   left: 50%;
-  bottom: 24px;
+  bottom: var(--edge-bottom);
   display: flex;
   gap: 12px;
   transform: translateX(-50%);
 }
 
-.hud button {
+.hud button,
+.hud .secondary {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 120px;
-  min-height: 48px;
+  min-height: var(--button);
   padding: 0 20px;
-  border: 2px solid #ffd700;
-  border-radius: 24px;
-  background: rgb(20 20 40 / 85%);
+  border: 2px solid var(--gold);
+  border-radius: calc(var(--button) / 2);
+  background: var(--panel);
   color: #fff;
   font: 600 17px system-ui, sans-serif;
   cursor: pointer;
@@ -50,21 +66,180 @@ body {
   background: rgb(60 50 10 / 90%);
 }
 
-.hud .tab {
+.hud button:disabled {
+  border-color: rgb(255 215 0 / 35%);
+  color: rgb(255 255 255 / 45%);
+  cursor: progress;
+}
+
+/* The way to the gift maker, quieter than Start */
+.hud .secondary {
+  border-color: rgb(255 255 255 / 45%);
+  background: rgb(0 0 0 / 45%);
+  font-weight: 500;
+  font-size: 15px;
+  text-decoration: none;
+}
+
+/* Low on the screen, so the stage shows above it */
+.hud .title-card {
+  box-sizing: border-box;
   position: absolute;
-  left: 16px;
-  bottom: 24px;
+  left: 50%;
+  bottom: var(--edge-bottom);
+  width: min(460px, 100% - var(--edge-left) - var(--edge-right));
+  padding: 14px 16px 16px;
+  border-radius: 16px;
+  background: rgb(0 0 0 / 60%);
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.hud .loading {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 20%);
+}
+
+.hud .loading .bar {
+  height: 100%;
+  background: var(--gold);
+  transform-origin: left;
+  transition: transform 0.2s ease-out;
+}
+
+.hud .status {
+  margin: 8px 0 12px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.hud .actions {
+  display: flex;
+  gap: 12px;
+}
+
+.hud .actions > * {
+  flex: 1;
+}
+
+.hud .tab {
+  box-sizing: border-box;
+  position: absolute;
   padding: 10px 14px;
   border-radius: 10px;
   background: rgb(0 0 0 / 60%);
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.4;
   pointer-events: auto;
 }
 
+.hud .tab .heading {
+  font-weight: 600;
+}
+
+.hud .tab .rounds {
+  margin: 4px 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.hud .tab .rounds .lost {
+  color: rgb(255 255 255 / 60%);
+}
+
+.hud .tab .rounds .won .amount {
+  color: var(--gold);
+}
+
+.hud .tab .tally {
+  font-size: 13px;
+}
+
 .hud .tab .total {
-  color: #ffd700;
+  color: var(--gold);
   font-weight: 700;
+}
+
+/* Each half of the tally on a line of its own in the corner, and side by side in the strip */
+.hud .tab .tally span {
+  display: block;
+}
+
+/* Landscape: the tab in the corner beside the buttons, a line for each round, its height clear of
+   the frame-rate meter, scrolling if a long show outgrows it */
+@media (orientation: landscape) {
+  .hud .tab {
+    left: var(--edge-left);
+    bottom: var(--edge-bottom);
+    width: 190px;
+    max-height: calc(100% - var(--edge-bottom) - 64px);
+    overflow-y: auto;
+  }
+
+  .hud .tab .rounds {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    column-gap: 10px;
+  }
+
+  .hud .tab .rounds li {
+    display: contents;
+  }
+
+  .hud .tab .rounds .amount {
+    grid-column: 3;
+    text-align: right;
+  }
+}
+
+/* A phone on its side, where the stage fills the width: a narrower tab, clear of the left crate
+   and its ring */
+@media (orientation: landscape) and (max-height: 500px) {
+  .hud .tab {
+    width: 172px;
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+}
+
+/* Portrait: the tab a strip above the buttons, the rounds side by side, and the title card's
+   buttons one above the other */
+@media (orientation: portrait) {
+  .hud .tab {
+    left: 50%;
+    bottom: calc(var(--edge-bottom) + var(--button) + 12px);
+    width: min(560px, 100% - var(--edge-left) - var(--edge-right));
+    transform: translateX(-50%);
+  }
+
+  .hud .tab .tally span {
+    display: inline;
+  }
+
+  .hud .tab .tally span + span::before {
+    content: ' · ';
+  }
+
+  .hud .tab .rounds {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+  }
+
+  .hud .tab .rounds li {
+    display: flex;
+    gap: 5px;
+    padding: 1px 7px;
+    border-radius: 6px;
+    background: rgb(255 255 255 / 10%);
+  }
+
+  .hud .actions {
+    flex-direction: column;
+  }
 }
 
 /* The host's lines. drei's wrapper has no width of its own, so the bubble sets its own; the

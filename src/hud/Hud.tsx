@@ -1,7 +1,8 @@
 import { useControls } from 'leva'
 import { useEffect } from 'react'
-import { formatAmount } from '../game/script.ts'
 import { useGame } from '../store.ts'
+import { Tab } from './Tab.tsx'
+import { TitleCard } from './TitleCard.tsx'
 
 // A temporary panel folder for trying each game in the demo, applied at the next Start
 function useGameFolder() {
@@ -31,7 +32,9 @@ function useGameFolder() {
   }, [setOptions, mode, prizes, rounds])
 }
 
-// The show's buttons and a minimal tab, drawn over the canvas and outside its events
+// The title card, the tab and the show's buttons, drawn over the canvas and outside its events:
+// the tab a corner in landscape and a strip above the buttons in portrait, all of it clear of the
+// frame-rate meter, the panel and the screen's notch and home bar
 export function Hud() {
   useGameFolder()
   const phase = useGame((s) => s.phase)
@@ -39,37 +42,16 @@ export function Hud() {
   const over = useGame((s) => s.over)
   const round = useGame((s) => s.round)
   const rounds = useGame((s) => s.rounds)
-  const prize = useGame((s) => s.prize)
-  const currency = useGame((s) => s.currency)
-  const total = useGame((s) => s.tab.total)
-  const bonus = useGame((s) => s.tab.bonus)
   const start = useGame((s) => s.start)
   const decide = useGame((s) => s.decide)
   const next = useGame((s) => s.next)
   const playAgain = useGame((s) => s.playAgain)
-  const amount = (value: number) => formatAmount(value, currency)
 
   // Each data-hud, like the bubble's data-line, is a stable hook for driving the page in a browser
   return (
     <div className="hud">
-      {phase !== 'title' && (
-        <div className="tab" data-hud="tab">
-          {round > 0 && (
-            <div>
-              Round {round} of {rounds}
-              {prize !== null && phase !== 'finale' && <> · for {amount(prize)}</>}
-            </div>
-          )}
-          {bonus > 0 && <div>Bonus {amount(bonus)}</div>}
-          <div className="total">Total {amount(total)}</div>
-        </div>
-      )}
+      {phase === 'title' ? <TitleCard onStart={start} /> : <Tab />}
       <div className="buttons">
-        {phase === 'title' && (
-          <button type="button" data-hud="start" onClick={start}>
-            Start the show
-          </button>
-        )}
         {awaiting === 'decision' && (
           <>
             <button type="button" data-hud="stay" onClick={() => decide('stay')}>
