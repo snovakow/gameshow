@@ -318,6 +318,15 @@ body {
   }
 }
 
+/* A gift's greeting on the title card */
+.hud .title-card .greeting {
+  margin: 0 0 12px;
+  color: var(--gold);
+  font-size: 20px;
+  line-height: 1.3;
+  text-align: center;
+}
+
 /* The pages without a stage: the gift maker and the message for a link that won't open. The body
    never scrolls, for the stage's sake, so the page scrolls itself; each edge keeps the gutter or
    the safe-area inset, whichever is wider */

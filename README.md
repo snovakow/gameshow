@@ -2,7 +2,7 @@
 
 **TypeScript + React + three.js + React Three Fiber + Vite + WebGPU**
 
-Gameshow is a 3D game-show stage in the browser, being built toward a game of the Monty Hall problem: three crates, one prize, and the question of whether to switch. Today the show plays: the host runs round after round, you pick a crate, and in the Monty Hall game she opens an empty one and offers you the switch. Gift links, sound and a night studio with its own effects are still to come.
+Gameshow is a 3D game-show stage in the browser, being built toward a game of the Monty Hall problem: three crates, one prize, and the question of whether to switch. Today the show plays: the host runs round after round, you pick a crate, and in the Monty Hall game she opens an empty one and offers you the switch. You can also make a show for someone as a gift and send it to them as a link. Sound and a night studio with its own effects are still to come.
 
 **Live demo:** [snovakow.com/gameshow](https://snovakow.com/gameshow/)
 
@@ -23,7 +23,7 @@ Gameshow started as plain three.js in JavaScript, and has been rebuilt onto this
 
 ## What's in it
 
-- **A title card** with a loading bar while the host and her moves arrive, and the button that starts the show once they have.
+- **A title card** with a loading bar while the host and her moves arrive, and the button that starts the show once they have. On a gift it greets the recipient by name.
 - **A game show in rounds.** The host welcomes you, explains the rules and announces each round's prize. You pick one of three numbered crates. In the Monty Hall game she then opens an empty crate and offers you the choice to stay with your pick or switch to the other closed one; in the simple game your pick is your answer. A pause for suspense, then the reveal, and the other crates open to show where the prize was.
 - **Two ways to set the prizes.** A fixed ladder of prizes that rise round by round, or prizes set as the show goes, so the total always lands within a range, with a bonus at the end if it falls short.
 - **A host** who idles in one of several stances, dances when you win and sulks when you lose. Her lines appear in a speech bubble above her, which never leaves the screen: wherever the view turns, it is moved in from the edge, or clear of the buttons and the tab, only as far as it needs to be.
@@ -32,21 +32,29 @@ Gameshow started as plain three.js in JavaScript, and has been rebuilt onto this
 - **A reflective floor** under a sunny sky, with soft shadows and fog in the distance.
 - **A camera** that frames the crates, the ring that marks your pick, the host and her speech bubble on any screen, through a wider lens on a phone held upright, and frames them again when the screen turns or resizes. Look around as you like: whenever the show needs the stage, as the host explains the game, for your pick and your choice to stay or switch, and before any crate opens, the view glides back, and a touch, a drag or a scroll during the glide hands it straight back to you.
 - **Made for phones first.** Buttons big enough for a thumb, a layout for each way the phone is held, with the tab in a corner on a wide screen and above the buttons on a tall one, all of it clear of a notch and the home bar, and the screen kept awake while a show runs, where the browser allows it.
-- **A control panel** for choosing the game, its prizes and how many rounds the next show plays, the host's stance, her reactions and how quickly they blend, and how quickly the view glides home. It starts folded away on a phone.
+- **A control panel** for choosing the game, its prizes and how many rounds the next show plays in the demo, the host's stance, her reactions and how quickly they blend, and how quickly the view glides home. It starts folded away on a phone and on a gift, whose game is the giver's to choose.
 - **A frame-rate meter** in the corner.
+- **Shows as gifts.** A page for making one: the recipient's name, who it's from and the occasion, the game, the prizes and their range, the number of rounds, the currency, and the host's lines in your own words if you like. It checks everything as you type, warns when the stage can't draw your currency symbol in 3D, and previews how shows of your gift tend to end, from thousands played by the rules. The finished show is a link to send; "Try it" plays it without counting.
+
+## Gift links
+
+Open the demo and choose "Make a show as a gift" to reach the gift maker. Everything about the show lives in the link itself, after the `#`, the part of a web address a browser never sends to a server, so nothing about a gift is stored anywhere but the browser that plays it. The encoding keeps the amounts out of sight at a glance, but it isn't secret, so don't put anything private in a gift.
+
+A gift is played once. Its browser remembers how far it got: reopen the link and the show carries on from the round after the last one decided, and a finished show reopens on its final tab. The gift maker can forget a link's progress in the browser it runs in. A link that has been cut short or changed shows a message saying so, rather than a broken show.
 
 ## Controls
 
 | To | With a mouse | On a touchscreen |
 | --- | --- | --- |
-| Start the show, stay, switch, go on to the next round or play again | Click the button | Tap the button |
+| Start the show, stay, switch, go on to the next round or, in the demo, play again | Click the button | Tap the button |
 | Pick a crate | Click it | Tap it |
 | Stay or switch | Click your crate to stay, or the other closed one to switch | Tap your crate to stay, or the other closed one to switch |
 | Skip ahead in what the host is saying | Click the speech bubble | Tap the speech bubble |
 | Look around | Drag with the left button | Drag with one finger |
 | Zoom | Scroll, or pinch on a trackpad | Pinch |
 | Pan | Drag with the right button, or with the left while holding Shift or Cmd | Drag with two fingers |
-| Choose the game, or change the host's stance or cue a reaction | Use the control panel | Use the control panel |
+| Choose the demo's game, or change the host's stance or cue a reaction | Use the control panel | Use the control panel |
+| Make a show as a gift | Choose "Make a show as a gift" on the title card | Tap "Make a show as a gift" on the title card |
 
 Looking around stops a little above level, so the stage is never seen head-on and the floor stays in view, and a pan slides along the floor rather than sinking under it. The zoom has limits either way. A press that turns into a drag looks around rather than picking the crate under it.
 

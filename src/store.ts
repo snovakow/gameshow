@@ -1,5 +1,11 @@
 import { create } from 'zustand'
-import { demoDefaults, validateConfig, type GameMode, type PrizeMode } from './game/config.ts'
+import {
+  demoDefaults,
+  validateConfig,
+  type Config,
+  type GameMode,
+  type PrizeMode,
+} from './game/config.ts'
 import {
   runShow,
   type CrateKind,
@@ -9,8 +15,11 @@ import {
   type RoundResult,
   type ShowIO,
 } from './game/director.ts'
+import { bonus as bonusFor } from './game/prizes.ts'
+import { resumePoint, serializeProgress } from './game/progress.ts'
 import { choiceForCrate, crateCount, finalCrate, type Choice } from './game/rules.ts'
 import { formatAmount, type LineKey } from './game/script.ts'
+import { writeStored } from './storage.ts'
 
 export interface CrateState {
   text: string
@@ -47,6 +56,18 @@ export interface GameOptions {
   rounds: number
 }
 
+// A show sent as a link, its settings already checked
+export interface Gift {
+  config: Config
+  // The title card's greeting
+  title: string
+  // Where this browser keeps the show's progress; none on the setup page's trial run
+  saveKey: string | null
+  // The rounds decided on an earlier visit, and whether that visit reached the finale
+  saved: RoundResult[]
+  finished: boolean
+}
+
 interface GameState {
   phase: Phase
   awaiting: Awaiting
@@ -70,6 +91,8 @@ interface GameState {
   // The show has said its last line
   over: boolean
   options: GameOptions
+  // The gift this page plays, or null for the demo
+  gift: Gift | null
 
   // The player's input
   start: () => void
@@ -78,7 +101,8 @@ interface GameState {
   next: () => void
   skipLine: () => void
   playAgain: () => void
-  // The page's own: the panel, the crates' frame loops and unmounting
+  // The page's own: the gift link, the panel, the crates' frame loops and unmounting
+  openGift: (gift: Gift) => void
   setOptions: (options: Partial<GameOptions>) => void
   reportShut: (crate: number) => void
   stop: () => void
@@ -101,6 +125,12 @@ const graphemes = new Intl.Segmenter()
 const characters = (text: string) => [...graphemes.segment(text)].length
 
 const demoCurrency = demoDefaults().currency
+
+// A gift's progress, saved in this browser at each final choice and at the finale, so a reload
+// never replays a decided round. Storage that refuses only means the show isn't remembered
+function saveProgress(gift: Gift | null, results: RoundResult[], finished: boolean) {
+  if (gift?.saveKey) writeStored('local', gift.saveKey, serializeProgress(results, finished))
+}
 
 export const useGame = create<GameState>()((set, get) => {
   let ids = 0
@@ -212,14 +242,18 @@ export const useGame = create<GameState>()((set, get) => {
           onNext = resolve
         }),
       recordRound: (result) => {
-        if (live()) set((state) => ({ results: [...state.results, result] }))
+        if (!live()) return
+        set((state) => ({ results: [...state.results, result] }))
+        saveProgress(get().gift, get().results, false)
       },
       addToTab: (result, total) => {
         if (!live()) return
         set((state) => ({ tab: { ...state.tab, rounds: [...state.tab.rounds, result], total } }))
       },
       finish: (total, bonus) => {
-        if (live()) set((state) => ({ tab: { ...state.tab, total: total + bonus, bonus } }))
+        if (!live()) return
+        set((state) => ({ tab: { ...state.tab, total: total + bonus, bonus } }))
+        saveProgress(get().gift, get().results, true)
       },
     }
   }
@@ -242,16 +276,22 @@ export const useGame = create<GameState>()((set, get) => {
     poseCue: null,
     over: false,
     options: { game: 'montyHall', prizes: 'pureOdds', rounds: demoDefaults().rounds },
+    gift: null,
 
     // Called from the Start click, never an effect, so a show can't start twice
     start: () => {
       if (get().phase !== 'title' || show) return
-      const validation = validateConfig({ ...demoDefaults(), ...get().options }, 'demo')
+      const { gift } = get()
+      // A gift's settings were checked when its link was read; the demo's come from the panel
+      const validation = gift
+        ? { ok: true as const, config: gift.config }
+        : validateConfig({ ...demoDefaults(), ...get().options }, 'demo')
       if (!validation.ok) {
         console.error('The game settings are invalid:', validation.errors.join(' '))
         return
       }
       const { config } = validation
+      const resume = gift?.saved ?? []
       const controller = new AbortController()
       show = controller
       set({
@@ -265,14 +305,16 @@ export const useGame = create<GameState>()((set, get) => {
         opened: null,
         final: null,
         tab: { rounds: [], total: 0, bonus: 0 },
-        results: [],
+        // A resumed gift saves its new rounds after the ones already kept
+        results: [...resume],
         line: null,
         over: false,
       })
       runShow(config, createIO(controller.signal), {
-        kind: 'demo',
+        kind: gift ? 'gift' : 'demo',
         random: Math.random,
         signal: controller.signal,
+        resume,
       }).then(
         () => {
           if (show === controller) set({ over: true })
@@ -310,8 +352,9 @@ export const useGame = create<GameState>()((set, get) => {
     skipLine: () => {
       onLine?.()
     },
+    // A gift is played once, so only the demo plays again
     playAgain: () => {
-      if (!get().over) return
+      if (!get().over || get().gift) return
       halt()
       set((state) => ({
         phase: 'title',
@@ -323,6 +366,23 @@ export const useGame = create<GameState>()((set, get) => {
         final: null,
         crates: state.crates.map((c) => ({ ...c, open: false })),
       }))
+    },
+    // Before the page first renders, so the title card greets the recipient from the start. A
+    // finished show reopens on its receipt, with no show to run
+    openGift: (gift) => {
+      const { config, saved, finished } = gift
+      set({ gift, currency: config.currency, crates: initialCrates(config.currency) })
+      if (!finished) return
+      const { total } = resumePoint(saved)
+      const extra = bonusFor(config, total)
+      set({
+        phase: 'finale',
+        round: config.rounds,
+        rounds: config.rounds,
+        tab: { rounds: saved, total: total + extra, bonus: extra },
+        results: saved,
+        over: true,
+      })
     },
     setOptions: (options) => set((state) => ({ options: { ...state.options, ...options } })),
     reportShut: (crate) => {

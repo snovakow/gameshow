@@ -1,5 +1,6 @@
 import type { Config } from './config.ts'
 import { bonus, roundPrize } from './prizes.ts'
+import { resumePoint } from './progress.ts'
 import type { Random } from './random.ts'
 import { crateCount, finalCrate, hostOpens, otherCrate, randomCrate, type Choice } from './rules.ts'
 import {
@@ -103,6 +104,9 @@ export interface ShowOptions {
   kind: ShowKind
   random: Random
   signal: AbortSignal
+  // A gift's rounds already decided in an earlier visit: the show rebuilds its tab from them and
+  // goes on with the round after the last, or with the finale when none is left
+  resume?: readonly RoundResult[]
 }
 
 // The drumroll's length before the final crate opens
@@ -152,18 +156,26 @@ export async function runShow(config: Config, io: ShowIO, options: ShowOptions):
     io.cue(name)
   }
 
-  let total = 0
-  let previous = 0
-  let wins = 0
-  let losses = 0
+  const resumed = options.resume ?? []
+  const from = resumePoint(resumed)
+  let { total, previous, wins, losses } = from
 
   act()
   io.setPhase('intro')
   cue('showStart')
-  await say('welcome')
-  await say(montyHall ? 'rules' : 'rulesSimple')
+  if (resumed.length) {
+    // The tab as it stood, round by round; the player has heard the welcome and the rules
+    let running = 0
+    for (const result of resumed) {
+      if (result.won) running += result.prize
+      io.addToTab(result, running)
+    }
+  } else {
+    await say('welcome')
+    await say(montyHall ? 'rules' : 'rulesSimple')
+  }
 
-  for (let round = 1; round <= config.rounds; round++) {
+  for (let round = from.round; round <= config.rounds; round++) {
     const prize = roundPrize(config, round, total, previous)
     const winner = randomCrate(random)
     const final = round === config.rounds

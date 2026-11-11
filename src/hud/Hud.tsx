@@ -5,8 +5,9 @@ import { Tab } from './Tab.tsx'
 import { TitleCard } from './TitleCard.tsx'
 import { useWakeLock } from './useWakeLock.ts'
 
-// A temporary panel folder for trying each game in the demo, applied at the next Start
-function useGameFolder() {
+// A temporary panel folder for trying each game in the demo, applied at the next Start. A gift's
+// game is the giver's, so a gift never mounts it, and the folder goes with the component
+function GameFolder() {
   const setOptions = useGame((s) => s.setOptions)
   // Only its first value counts, as the panel reads its starting values once
   const options = useGame((s) => s.options)
@@ -31,13 +32,14 @@ function useGameFolder() {
       rounds,
     })
   }, [setOptions, mode, prizes, rounds])
+  return null
 }
 
 // The title card, the tab and the show's buttons, drawn over the canvas and outside its events:
 // the tab a corner in landscape and a strip above the buttons in portrait, all of it clear of the
 // frame-rate meter, the panel and the screen's notch and home bar
 export function Hud() {
-  useGameFolder()
+  const gift = useGame((s) => s.gift)
   const phase = useGame((s) => s.phase)
   const awaiting = useGame((s) => s.awaiting)
   const over = useGame((s) => s.over)
@@ -57,7 +59,16 @@ export function Hud() {
   // Each data-hud, like the bubble's data-line, is a stable hook for driving the page in a browser
   return (
     <div className="hud">
-      {phase === 'title' ? <TitleCard onStart={onStart} /> : <Tab />}
+      {!gift && <GameFolder />}
+      {phase === 'title' ? (
+        <TitleCard
+          onStart={onStart}
+          title={gift?.title ?? null}
+          resuming={gift !== null && gift.saved.length > 0}
+        />
+      ) : (
+        <Tab />
+      )}
       <div className="buttons">
         {awaiting === 'decision' && (
           <>
@@ -74,7 +85,8 @@ export function Hud() {
             {round === rounds ? 'Finale' : 'Next round'}
           </button>
         )}
-        {over && (
+        {/* A gift is played once; its tab stays as the receipt */}
+        {over && !gift && (
           <button type="button" data-hud="again" onClick={playAgain}>
             Play again
           </button>

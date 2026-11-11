@@ -3,6 +3,9 @@ import { Leva } from 'leva'
 import { StrictMode, useEffect, useState } from 'react'
 import { WebGPURenderer } from 'three/webgpu'
 import { Hud } from './hud/Hud.tsx'
+import { LinkMessage } from './hud/LinkMessage.tsx'
+import { Setup } from './hud/Setup.tsx'
+import type { Route } from './route.ts'
 import { Stage } from './stage/Stage.tsx'
 import { standardFov } from './stage/useFraming.ts'
 import { useGame } from './store.ts'
@@ -27,11 +30,13 @@ async function createRenderer({ canvas }: { canvas: object }) {
   return renderer
 }
 
-function App() {
+// The stage, its panel and the HUD, for the demo or a gift
+function Show({ gift }: { gift: boolean }) {
   // A show runs from the Start click until it ends, Play again stops it, or the page goes
   useEffect(() => () => useGame.getState().stop(), [])
-  // Read once: the panel takes its starting state at mount, and a phone that turns keeps it
-  const [collapsed] = useState(() => matchMedia(smallScreen).matches)
+  // Read once: the panel takes its starting state at mount, and a phone that turns keeps it. A
+  // gift's recipient came for the show, not the panel
+  const [collapsed] = useState(() => gift || matchMedia(smallScreen).matches)
 
   return (
     <>
@@ -51,6 +56,33 @@ function App() {
       </StrictMode>
     </>
   )
+}
+
+// The page the fragment named at load. Any change of fragment (the title card's way to the setup
+// page, its trial run, the browser's Back) loads the page afresh, so the renderer, its GPU device,
+// the panel and the store are made once per page, and no canvas is ever taken down and put back
+function App({ route }: { route: Route }) {
+  useEffect(() => {
+    const reload = () => location.reload()
+    addEventListener('hashchange', reload)
+    return () => removeEventListener('hashchange', reload)
+  }, [])
+
+  if (route.page === 'setup') {
+    return (
+      <StrictMode>
+        <Setup />
+      </StrictMode>
+    )
+  }
+  if (route.page === 'broken') {
+    return (
+      <StrictMode>
+        <LinkMessage problem={route.problem} errors={route.errors} />
+      </StrictMode>
+    )
+  }
+  return <Show gift={route.page === 'gift'} />
 }
 
 export default App

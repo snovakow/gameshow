@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { demoDefaults, type Config, type GameMode, type PrizeMode } from './config.ts'
 import { runShow, type CrateSetup, type RoundResult, type ShowIO } from './director.ts'
-import { bonus as bonusFor } from './prizes.ts'
+import { bonus as bonusFor, roundPrize } from './prizes.ts'
 import { mulberry32, type Random } from './random.ts'
 import type { Choice } from './rules.ts'
 
@@ -393,4 +393,54 @@ void test('a show already stopped makes no call at all', async () => {
     /stopped/,
   )
   assert.equal(played.calls.length, 0)
+})
+
+void test('a resumed show rebuilds the tab and plays on from the next round', async () => {
+  const cfg = config('montyHall', 'withinRange', { name: 'Alex' })
+  const script: Script = { pick: () => 0, choose: () => 'switch' }
+  const full = await play(cfg, script, mulberry32(11))
+  const saved = full.played.results.slice(0, 2)
+
+  const { io, played } = fakeIO(script)
+  const total = await runShow(cfg, io, {
+    kind: 'gift',
+    random: mulberry32(12),
+    signal: new AbortController().signal,
+    resume: saved,
+  })
+  const names = played.calls.map((call) => (call.name === 'say' ? `say ${String(call.arg)}` : call.name))
+  // No welcome and no rules again; the tab gets the saved rounds before any crate is set
+  assert.ok(!names.includes('say welcome') && !names.includes('say rules'))
+  const tabbed = played.calls.flatMap((call, i) => (call.name === 'addToTab' ? [i] : []))
+  assert.ok(tabbed[1] < names.indexOf('setCrates'))
+  const rounds = played.calls.flatMap((call) => {
+    if (call.name !== 'setRound' || typeof call.arg !== 'object' || call.arg === null) return []
+    return [new Map(Object.entries(call.arg)).get('round')]
+  })
+  assert.deepEqual(rounds, [3, 4, 5])
+  // Only the new rounds are recorded, each prize the one the rules set from the saved tab
+  assert.deepEqual(
+    played.results.map((result) => result.round),
+    [3, 4, 5],
+  )
+  const all = [...saved, ...played.results]
+  let running = 0
+  let previous = 0
+  for (const result of all) {
+    assert.equal(result.prize, roundPrize(cfg, result.round, running, previous))
+    if (result.won) running += result.prize
+    previous = result.prize
+  }
+  assert.equal(total, running + bonusFor(cfg, running))
+
+  // With every round saved, only the finale is left
+  const finale = fakeIO(script)
+  await runShow(cfg, finale.io, {
+    kind: 'gift',
+    random: mulberry32(13),
+    signal: new AbortController().signal,
+    resume: full.played.results,
+  })
+  assert.ok(!finale.played.calls.some((call) => call.name === 'setCrates'))
+  assert.deepEqual(finale.played.finish, full.played.finish)
 })
