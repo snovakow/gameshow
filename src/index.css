@@ -15,6 +15,58 @@ body {
   overscroll-behavior: none;
 }
 
+/* The show's buttons and tab, over the canvas; only the controls themselves take presses */
+.hud {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  font-family: system-ui, sans-serif;
+}
+
+.hud .buttons {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  display: flex;
+  gap: 12px;
+  transform: translateX(-50%);
+}
+
+.hud button {
+  min-width: 120px;
+  min-height: 48px;
+  padding: 0 20px;
+  border: 2px solid #ffd700;
+  border-radius: 24px;
+  background: rgb(20 20 40 / 85%);
+  color: #fff;
+  font: 600 17px system-ui, sans-serif;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.hud button:hover {
+  background: rgb(60 50 10 / 90%);
+}
+
+.hud .tab {
+  position: absolute;
+  left: 16px;
+  bottom: 24px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgb(0 0 0 / 60%);
+  font-size: 15px;
+  line-height: 1.5;
+  pointer-events: auto;
+}
+
+.hud .tab .total {
+  color: #ffd700;
+  font-weight: 700;
+}
+
 /* The host's lines. drei's wrapper has no width of its own, so the bubble sets its own */
 .bubble {
   position: relative;

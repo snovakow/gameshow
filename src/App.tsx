@@ -1,6 +1,9 @@
 import { Canvas, type CameraProps, type Dpr } from '@react-three/fiber'
+import { useEffect } from 'react'
 import { WebGPURenderer } from 'three/webgpu'
+import { Hud } from './hud/Hud.tsx'
 import { Stage } from './stage/Stage.tsx'
+import { useGame } from './store.ts'
 
 const camera: CameraProps = { fov: 50, near: 0.25, far: 30, position: [1, 2, 4] }
 
@@ -19,10 +22,17 @@ async function createRenderer({ canvas }: { canvas: object }) {
 }
 
 function App() {
+  // A show runs from the Start click until it ends, Play again stops it, or the page goes
+  useEffect(() => () => useGame.getState().stop(), [])
+
   return (
-    <Canvas gl={createRenderer} camera={camera} flat shadows="percentage" dpr={dpr}>
-      <Stage />
-    </Canvas>
+    <>
+      <Canvas gl={createRenderer} camera={camera} flat shadows="percentage" dpr={dpr}>
+        <Stage />
+      </Canvas>
+      {/* Beside the canvas, not in it, so a press on a button never reaches the stage */}
+      <Hud />
+    </>
   )
 }
 

@@ -2,7 +2,7 @@
 
 **TypeScript + React + three.js + React Three Fiber + Vite + WebGPU**
 
-Gameshow is a 3D game-show stage in the browser, being built toward a game of the Monty Hall problem: three crates, one prize, and the question of whether to switch. Today the stage is set, with a host, three crates you can open to reveal what's inside, and a mirror-like floor. The game's rules, prizes, settings and lines for the host are written and tested, but aren't on the stage yet.
+Gameshow is a 3D game-show stage in the browser, being built toward a game of the Monty Hall problem: three crates, one prize, and the question of whether to switch. Today the show plays: the host runs round after round, you pick a crate, and in the Monty Hall game she opens an empty one and offers you the switch. Gift links, sound and a night studio with its own effects are still to come.
 
 **Live demo:** [snovakow.com/gameshow](https://snovakow.com/gameshow/)
 
@@ -23,23 +23,29 @@ Gameshow started as plain three.js in JavaScript, and has been rebuilt onto this
 
 ## What's in it
 
-- **A host** who idles in one of several stances and can be cued to react: dancing, sulking, looking defeated or rejected.
-- **Three crates**, each hiding a prize amount that rises out of it when you open the lid.
+- **A game show in rounds.** The host welcomes you, explains the rules and announces each round's prize. You pick one of three numbered crates. In the Monty Hall game she then opens an empty crate and offers you the choice to stay with your pick or switch to the other closed one; in the simple game your pick is your answer. A pause for suspense, then the reveal, and the other crates open to show where the prize was.
+- **Two ways to set the prizes.** A fixed ladder of prizes that rise round by round, or prizes set as the show goes, so the total always lands within a range, with a bonus at the end if it falls short.
+- **A host** who idles in one of several stances, dances when you win and sulks when you lose. Her lines appear in a speech bubble above her.
+- **Three crates** whose lids swing open and shut, raising a gold prize or a grey $0 as they open. A gold ring on the floor marks your pick.
+- **A tab** that keeps the round, the prize in play and your total.
 - **A reflective floor** under a sunny sky, with soft shadows and fog in the distance.
-- **A control panel** for choosing the host's stance, triggering reactions, and setting how quickly the animations blend.
+- **A control panel** for choosing the game, its prizes and how many rounds the next show plays, the host's stance, and her reactions and how quickly they blend.
 - **A frame-rate meter** in the corner.
 
 ## Controls
 
 | To | With a mouse | On a touchscreen |
 | --- | --- | --- |
+| Start the show, stay, switch, go on to the next round or play again | Click the button | Tap the button |
+| Pick a crate | Click it | Tap it |
+| Stay or switch | Click your crate to stay, or the other closed one to switch | Tap your crate to stay, or the other closed one to switch |
+| Skip ahead in what the host is saying | Click the speech bubble | Tap the speech bubble |
 | Look around | Drag with the left button | Drag with one finger |
 | Zoom | Scroll | Pinch |
 | Pan | Drag with the right button | Drag with two fingers |
-| Open a crate | Click it | Tap it |
-| Change the host's stance or cue a reaction | Use the control panel | Use the control panel |
+| Choose the game, or change the host's stance or cue a reaction | Use the control panel | Use the control panel |
 
-Looking around stops at the horizon, and the zoom has limits either way.
+Looking around stops at the horizon, and the zoom has limits either way. A press that turns into a drag looks around rather than picking the crate under it.
 
 ## Workflow
 
