@@ -4,6 +4,8 @@ import { button, folder, useControls } from 'leva'
 import { useCallback, useEffect, useMemo, useRef, type RefObject } from 'react'
 import { LoopOnce, LoopRepeat, type AnimationAction, type Object3D } from 'three'
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
+import type { PoseName } from '../game/director.ts'
+import { useGame } from '../store.ts'
 
 // Each clip is the first in its file; stances loop, and poses play once and hold their last frame
 const stances: [string, string][] = [
@@ -11,7 +13,8 @@ const stances: [string, string][] = [
   ['Idle', 'Idle.fbx'],
   ['Idle Briefcase', 'Standing W_Briefcase Idle.fbx'],
 ]
-const poses: [string, string][] = [
+// Named as the show cues them
+const poses: [PoseName, string][] = [
   ['Defeated', 'Defeated.fbx'],
   ['Rejected', 'Rejected.fbx'],
   ['Sad', 'Sad Idle.fbx'],
@@ -62,6 +65,13 @@ export function useHostAnimations(model: RefObject<Object3D | null>) {
     [actions],
   )
 
+  const poseCue = useGame((s) => s.poseCue)
+  const cue = useGame((s) => s.cue)
+  // The cues present at mount have already played, so a remount (StrictMode's second one
+  // included) never replays them
+  const mountedPose = useRef(poseCue?.id)
+  const mountedCue = useRef(cue?.id)
+
   const [{ stance, poseDuration }, , get] = useControls(
     () => ({
       Stances: folder({
@@ -105,6 +115,19 @@ export function useHostAnimations(model: RefObject<Object3D | null>) {
   useEffect(() => {
     fadeTo(stance, get('stanceDuration'))
   }, [fadeTo, get, stance])
+
+  // The show cues a pose through the same fade as the panel's buttons; the show never waits
+  // for one, and the next cue cuts a long dance short
+  useEffect(() => {
+    if (!poseCue || poseCue.id === mountedPose.current) return
+    fadeTo(poseCue.pose, get('poseDuration'))
+  }, [fadeTo, get, poseCue])
+
+  // Each round starts from the panel's current stance
+  useEffect(() => {
+    if (!cue || cue.id === mountedCue.current || cue.name !== 'roundStart') return
+    fadeTo(get('stance'), get('stanceDuration'))
+  }, [cue, fadeTo, get])
 
   // A finished pose fades back to the current stance
   useEffect(() => {

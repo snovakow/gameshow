@@ -5,8 +5,10 @@ import { Crate } from './Crate.tsx'
 import { Floor } from './Floor.tsx'
 import { Host } from './Host.tsx'
 import { Lights } from './Lights.tsx'
+import { SpeechBubble } from './SpeechBubble.tsx'
 
-// Where the crates stand, on x and z
+// Where the crates stand, on x and z; numbered 1, 2 and 3 in this order, which reads left to
+// right from the opening view
 const crates: [number, number][] = [
   [-1.5, 0],
   [0, -1.5],
@@ -34,6 +36,7 @@ export function Stage() {
       <Suspense fallback={null}>
         <Host />
       </Suspense>
+      <SpeechBubble />
       <Stats />
     </>
   )
