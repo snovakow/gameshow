@@ -48,7 +48,7 @@ Gameshow started as plain three.js in JavaScript, and has been rebuilt onto this
 | Pan | Drag with the right button, or with the left while holding Shift or Cmd | Drag with two fingers |
 | Choose the game, or change the host's stance or cue a reaction | Use the control panel | Use the control panel |
 
-Looking around stops at the horizon, and the zoom has limits either way. A press that turns into a drag looks around rather than picking the crate under it.
+Looking around stops a little above level, so the stage is never seen head-on and the floor stays in view, and a pan slides along the floor rather than sinking under it. The zoom has limits either way. A press that turns into a drag looks around rather than picking the crate under it.
 
 ## Workflow
 
