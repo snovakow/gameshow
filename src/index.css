@@ -67,7 +67,8 @@ body {
   font-weight: 700;
 }
 
-/* The host's lines. drei's wrapper has no width of its own, so the bubble sets its own */
+/* The host's lines. drei's wrapper has no width of its own, so the bubble sets its own; the
+   camera's framing assumes this width, the padding and the four lines below */
 .bubble {
   position: relative;
   width: max-content;

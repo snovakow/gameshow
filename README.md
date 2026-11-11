@@ -29,6 +29,7 @@ Gameshow started as plain three.js in JavaScript, and has been rebuilt onto this
 - **Three crates** whose lids swing open and shut, raising a gold prize or a grey $0 as they open. A gold ring on the floor marks your pick.
 - **A tab** that keeps the round, the prize in play and your total.
 - **A reflective floor** under a sunny sky, with soft shadows and fog in the distance.
+- **A camera** that frames the crates, the host and her speech bubble on any screen, standing further back on a phone held upright, and frames them again when the screen turns or resizes.
 - **A control panel** for choosing the game, its prizes and how many rounds the next show plays, the host's stance, and her reactions and how quickly they blend.
 - **A frame-rate meter** in the corner.
 
