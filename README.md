@@ -30,7 +30,7 @@ Gameshow started as plain three.js in JavaScript, and has been rebuilt onto this
 - **Three crates** whose lids swing open and shut, raising a gold prize or a grey $0 as they open. A gold ring on the floor marks your pick.
 - **A tab** that keeps the round and the prize in play, a line for each round you've played, how staying and switching have each paid off in the Monty Hall game, and your total. At the end it stays up as your receipt.
 - **A reflective floor** under a sunny sky, with soft shadows and fog in the distance.
-- **A camera** that frames the crates, the ring that marks your pick, the host and her speech bubble on any screen, through a wider lens on a phone held upright, and frames them again when the screen turns or resizes.
+- **A camera** that frames the crates, the ring that marks your pick, the host and her speech bubble on any screen, through a wider lens on a phone held upright, and frames them again when the screen turns or resizes. Look around as you like: whenever the show needs the stage, for your pick, your choice to stay or switch, the reveal and a loss, the view glides back, and a touch, a drag or a scroll during the glide hands it straight back to you.
 - **Made for phones first.** Buttons big enough for a thumb, a layout for each way the phone is held, with the tab in a corner on a wide screen and above the buttons on a tall one, all of it clear of a notch and the home bar, and the screen kept awake while a show runs, where the browser allows it.
 - **A control panel** for choosing the game, its prizes and how many rounds the next show plays, the host's stance, and her reactions and how quickly they blend. It starts folded away on a phone.
 - **A frame-rate meter** in the corner.

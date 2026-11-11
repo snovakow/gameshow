@@ -9,6 +9,7 @@ import { Lights } from './Lights.tsx'
 import { SpeechBubble } from './SpeechBubble.tsx'
 import { useFraming } from './useFraming.ts'
 import { touches, useGestures } from './useGestures.ts'
+import { instant, useHomeView } from './useHomeView.ts'
 
 // Where the crates stand, on x and z; numbered 1, 2 and 3 in this order, which reads left to
 // right from the opening view
@@ -18,10 +19,6 @@ const crates: [number, number][] = [
   [1.5, 0],
 ]
 
-// camera-controls eases every change of view; at the shortest time it accepts, the ease is over
-// within a frame, so the camera follows the pointer without lag
-const instant = 0.0001
-
 // The lowest the view tilts, 10° above level: nearer the horizon the stage is seen head-on and the
 // floor, drawn from above only, thins to nothing
 const lowestView = MathUtils.degToRad(80)
@@ -29,7 +26,8 @@ const lowestView = MathUtils.degToRad(80)
 export function Stage() {
   const controls = useRef<CameraControlsImpl>(null)
   useFraming(controls, crates)
-  useGestures(controls)
+  const takeOver = useHomeView(controls, crates)
+  useGestures(controls, takeOver)
 
   // A pan moves the point the camera turns around, and the camera stands at or above it, so the
   // point is kept on or above the floor: a pan that meets the floor slides along it rather than

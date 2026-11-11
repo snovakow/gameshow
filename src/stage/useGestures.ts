@@ -23,9 +23,14 @@ const lineHeight = 16
 
 // The gestures camera-controls maps differently from the controls the stage had before: a trackpad
 // pinch and a touch pinch follow the fingers, moving the camera within its distance limits, and the
-// left button pans while shift or cmd is held. Each listener sits on the element the controls
-// listen on; those that must act first listen as the event comes down to it, before the controls
-export function useGestures(controls: RefObject<CameraControlsImpl | null>) {
+// left button pans while shift or cmd is held. Each listener sits where the controls listen: a
+// press or a wheel on their element, and a pinch's moves and lifts on the page. Those that must act
+// first listen as the event comes down to the element, before the controls. A wheel and the
+// pinches end a glide of the camera's through takeOver, since the controls announce neither
+export function useGestures(
+  controls: RefObject<CameraControlsImpl | null>,
+  takeOver: () => void,
+) {
   const gl = useThree((s) => s.gl)
   // The element R3F gives its events, as drei's controls connect to it; the canvas until it's set
   const connected: unknown = useThree((s) => s.events.connected)
@@ -43,9 +48,11 @@ export function useGestures(controls: RefObject<CameraControlsImpl | null>) {
       void cameraControls.dollyTo(distance * scale, true)
     }
 
-    // camera-controls turns a ctrl+wheel into the lens's zoom, which the stage pins, so it would
-    // do nothing; the browser would zoom the page instead
+    // Any wheel ends a glide, since the controls announce none. camera-controls turns a ctrl+wheel
+    // into the lens's zoom, which the stage pins, so it would do nothing; the browser would zoom
+    // the page instead
     const onWheel = (event: WheelEvent) => {
+      takeOver()
       if (!event.ctrlKey) return
       event.preventDefault()
       event.stopImmediatePropagation()
@@ -85,7 +92,10 @@ export function useGestures(controls: RefObject<CameraControlsImpl | null>) {
       finger.x = event.clientX
       finger.y = event.clientY
       const now = measure()
-      if (spread > 0 && now > 0) dollyBy(spread / now)
+      if (spread > 0 && now > 0) {
+        takeOver()
+        dollyBy(spread / now)
+      }
       spread = now
     }
     const onTouchUp = (event: PointerEvent) => {
@@ -107,5 +117,5 @@ export function useGestures(controls: RefObject<CameraControlsImpl | null>) {
       page.removeEventListener('pointercancel', onTouchUp)
       cameraControls.mouseButtons.left = ACTION.ROTATE
     }
-  }, [controls, connected, gl])
+  }, [controls, connected, gl, takeOver])
 }

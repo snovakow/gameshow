@@ -6,7 +6,7 @@ import { MathUtils, PerspectiveCamera, Vector3 } from 'three'
 // The opening view the stage has always had: from (1, 2, 4), looking at a point half a unit above
 // the middle of the floor
 const opening = new Vector3(1, 2, 4)
-const lookAt = new Vector3(0, 0.5, 0)
+export const lookAt = new Vector3(0, 0.5, 0)
 // The framing never brings the camera nearer than the opening view, so a screen as wide as a
 // desktop's keeps exactly that view
 const nearest = opening.distanceTo(lookAt)
@@ -123,6 +123,20 @@ function fitDistance(
   )
 }
 
+// The framed view's camera position for a screen: from the stage's middle along its opening line
+// of sight, at the distance that fits it, which the show goes back to when it needs the stage
+export function framedPosition(
+  crates: [number, number][],
+  fov: number,
+  width: number,
+  height: number,
+  farthest: number,
+) {
+  const direction = opening.clone().sub(lookAt).normalize()
+  const fitted = fitDistance(framedPoints(crates), lookAt, direction, fov, width, height)
+  return direction.multiplyScalar(MathUtils.clamp(fitted, nearest, farthest)).add(lookAt)
+}
+
 // Fits the stage to the screen: the closed crates with their rings, the host and her bubble, with
 // a margin, through a lens widened on a screen held upright. At the opening it looks along the
 // stage's opening line of sight; after a resize or a turn of the phone it keeps the direction the
@@ -148,12 +162,8 @@ export function useFraming(
       camera.fov = fov
       camera.updateProjectionMatrix()
     }
-    const points = framedPoints(crates)
     if (!opened.current) {
-      const direction = opening.clone().sub(lookAt).normalize()
-      const fitted = fitDistance(points, lookAt, direction, camera.fov, width, height)
-      const distance = MathUtils.clamp(fitted, nearest, cameraControls.maxDistance)
-      const position = direction.multiplyScalar(distance).add(lookAt)
+      const position = framedPosition(crates, camera.fov, width, height, cameraControls.maxDistance)
       void cameraControls.setLookAt(
         position.x,
         position.y,
@@ -168,7 +178,7 @@ export function useFraming(
     }
     const centre = cameraControls.getTarget(new Vector3())
     const direction = cameraControls.getPosition(new Vector3()).sub(centre).normalize()
-    const fitted = fitDistance(points, centre, direction, camera.fov, width, height)
+    const fitted = fitDistance(framedPoints(crates), centre, direction, camera.fov, width, height)
     void cameraControls.dollyTo(MathUtils.clamp(fitted, nearest, cameraControls.maxDistance), false)
   }, [controls, crates, get, width, height])
 }
