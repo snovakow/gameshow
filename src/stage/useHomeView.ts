@@ -1,5 +1,6 @@
 import { CameraControlsImpl } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
+import { folder, useControls } from 'leva'
 import { useCallback, useEffect, useRef, type RefObject } from 'react'
 import { PerspectiveCamera, Vector3 } from 'three'
 import type { Phase } from '../game/director.ts'
@@ -12,10 +13,11 @@ const { ACTION } = CameraControlsImpl
 // camera-controls eases every change of view; at the shortest time it accepts, the ease is over
 // within a frame, so the camera follows the pointer without lag
 export const instant = 0.0001
-// The glide home's ease, in seconds: camera-controls counts a move at rest once every part of it is
-// within 0.01 of its end, which at this ease comes within a second and a half of the start from
-// any turn or zoom the player can make
-const glide = 0.3
+// The glide home's ease, camera-controls' smoothTime in seconds, as the panel starts it. A move is
+// at rest once every part of it is within 0.01 of its end, which at this ease comes within a second
+// and a half of the start from any turn or zoom the player can make. The panel's range runs from
+// nearly a jump to a slow drift
+const glide = { value: 0.3, min: 0.1, max: 1, step: 0.05 }
 // Nearer the framed view than this, in the stage's units, the camera is already home
 const home = 1e-3
 // The host's lines that want the stage in view: the rules, which are about the crates, and the
@@ -54,6 +56,12 @@ export function useHomeView(
   const height = useThree((s) => s.size.height)
   // Set while the controls are mounted
   const glides = useRef<Glides | null>(null)
+  // Read as each glide starts, so a change applies to the next one
+  const [, , panel] = useControls(() => ({
+    Camera: folder({
+      glide: { ...glide, label: 'Glide home', hint: 'How slowly the view glides back' },
+    }),
+  }))
 
   useEffect(() => {
     const cameraControls = controls.current
@@ -79,7 +87,7 @@ export function useHomeView(
       if (!gliding && position.distanceTo(framed) < home && target.distanceTo(lookAt) < home) return
       heading.copy(framed)
       gliding = true
-      cameraControls.smoothTime = glide
+      cameraControls.smoothTime = panel('glide')
       const { x, y, z } = framed
       void cameraControls.setLookAt(x, y, z, lookAt.x, lookAt.y, lookAt.z, true)
       // The camera's turn is counted on past a full circle, so it would unwind every turn the
@@ -150,7 +158,7 @@ export function useHomeView(
       glides.current = null
       takeOver()
     }
-  }, [controls, crates, get])
+  }, [controls, crates, get, panel])
 
   useEffect(() => {
     glides.current?.refit({ width, height })

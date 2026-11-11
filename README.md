@@ -32,7 +32,7 @@ Gameshow started as plain three.js in JavaScript, and has been rebuilt onto this
 - **A reflective floor** under a sunny sky, with soft shadows and fog in the distance.
 - **A camera** that frames the crates, the ring that marks your pick, the host and her speech bubble on any screen, through a wider lens on a phone held upright, and frames them again when the screen turns or resizes. Look around as you like: whenever the show needs the stage, as the host explains the game, for your pick and your choice to stay or switch, and before any crate opens, the view glides back, and a touch, a drag or a scroll during the glide hands it straight back to you.
 - **Made for phones first.** Buttons big enough for a thumb, a layout for each way the phone is held, with the tab in a corner on a wide screen and above the buttons on a tall one, all of it clear of a notch and the home bar, and the screen kept awake while a show runs, where the browser allows it.
-- **A control panel** for choosing the game, its prizes and how many rounds the next show plays, the host's stance, and her reactions and how quickly they blend. It starts folded away on a phone.
+- **A control panel** for choosing the game, its prizes and how many rounds the next show plays, the host's stance, her reactions and how quickly they blend, and how quickly the view glides home. It starts folded away on a phone.
 - **A frame-rate meter** in the corner.
 
 ## Controls
