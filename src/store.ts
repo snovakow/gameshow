@@ -10,7 +10,7 @@ import {
   type ShowIO,
 } from './game/director.ts'
 import { choiceForCrate, crateCount, finalCrate, type Choice } from './game/rules.ts'
-import { formatAmount } from './game/script.ts'
+import { formatAmount, type LineKey } from './game/script.ts'
 
 export interface CrateState {
   text: string
@@ -31,6 +31,8 @@ export interface PoseCue {
   id: number
 }
 export interface SpokenLine {
+  // Which of the host's lines it is, which the stage reacts to
+  key: LineKey
   text: string
   id: number
 }
@@ -137,10 +139,10 @@ export const useGame = create<GameState>()((set, get) => {
     // A step of a show that has since stopped does nothing
     const live = () => !signal.aborted
     return {
-      say: ({ text }) =>
+      say: ({ key, text }) =>
         new Promise<void>((resolve) => {
           if (!live()) return
-          set({ line: { text, id: ++ids } })
+          set({ line: { key, text, id: ++ids } })
           const finish = () => {
             if (onLine !== finish) return
             clearTimeout(timer)

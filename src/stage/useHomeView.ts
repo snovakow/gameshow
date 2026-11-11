@@ -3,6 +3,7 @@ import { useThree } from '@react-three/fiber'
 import { useCallback, useEffect, useRef, type RefObject } from 'react'
 import { PerspectiveCamera, Vector3 } from 'three'
 import type { Phase } from '../game/director.ts'
+import type { LineKey } from '../game/script.ts'
 import { useGame, type Awaiting } from '../store.ts'
 import { framedPosition, lookAt } from './useFraming.ts'
 
@@ -17,6 +18,9 @@ export const instant = 0.0001
 const glide = 0.3
 // Nearer the framed view than this, in the stage's units, the camera is already home
 const home = 1e-3
+// The host's lines that want the stage in view: the rules, which are about the crates, and the
+// two that announce a crate about to open, so the view is home before its lid moves
+const homeLines = new Set<LineKey>(['rules', 'rulesSimple', 'hostOpens', 'open'])
 
 interface Screen {
   width: number
@@ -36,10 +40,11 @@ interface Moment {
   awaiting: Awaiting
 }
 
-// Takes the camera home to the framed view whenever the show needs the stage: a pick or a decision
-// awaited, the reveal, and a loss. It glides there, and the player always wins: any gesture ends
-// the glide where the camera is, and a moment that comes while a gesture is held waits for its
-// release. Returns what ends a glide for the gestures the controls don't announce
+// Takes the camera home to the framed view whenever the show needs the stage: as the host explains
+// the rules, when a pick or a decision is awaited, as she announces a crate she or the player is
+// about to open, and at the reveal and a loss. It glides there, and the player always wins: any
+// gesture ends the glide where the camera is, and a moment that comes while a gesture is held
+// waits for its release. Returns what ends a glide for the gestures the controls don't announce
 export function useHomeView(
   controls: RefObject<CameraControlsImpl | null>,
   crates: [number, number][],
@@ -118,7 +123,8 @@ export function useHomeView(
         (state.awaiting === 'pick' || state.awaiting === 'decision')
       const cued =
         state.cue !== previous.cue && (state.cue?.name === 'reveal' || state.cue?.name === 'lose')
-      if (!awaited && !cued) return
+      const said = state.line !== previous.line && !!state.line && homeLines.has(state.line.key)
+      if (!awaited && !cued && !said) return
       if (held || cameraControls.currentAction !== ACTION.NONE) {
         waiting = { round: state.round, phase: state.phase, awaiting: state.awaiting }
         return
