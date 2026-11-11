@@ -32,8 +32,59 @@ const contain = (e: SyntheticEvent) => {
 // drei hides the bubble while its anchor is behind the camera; it stays shown, placed at an edge
 const keepShown = () => undefined
 
+// The placement runs every frame, so what it works with is kept between frames: the anchor, the box
+// each test writes the bubble into, and the places tried for a moved bubble's centre, across and
+// down, written over from the start each time rather than emptied, which would let go of their
+// storage
 const anchor = new Vector3()
 const seen = new Vector3()
+const spot: Box = { left: 0, top: 0, right: 0, bottom: 0 }
+const triedX: number[] = []
+const triedY: number[] = []
+// A bubble set against an edge lands there to within rounding, which these tests allow, in CSS
+// pixels
+const slack = 0.01
+
+// The bubble's box centred on (cx, cy), with the tail's height below it when it has one
+function bubbleBox(b: Box, cx: number, cy: number, width: number, height: number, below: number) {
+  b.left = cx - width / 2
+  b.top = cy - height / 2
+  b.right = cx + width / 2
+  b.bottom = cy + height / 2 + below
+  return b
+}
+
+// Whether a box lies within the room, and whether two boxes overlap, each to within the slack
+function inside(b: Box, bounds: Box) {
+  return (
+    b.left >= bounds.left - slack &&
+    b.top >= bounds.top - slack &&
+    b.right <= bounds.right + slack &&
+    b.bottom <= bounds.bottom + slack
+  )
+}
+
+function meets(a: Box, b: Box) {
+  return (
+    a.left < b.right - slack &&
+    b.left < a.right - slack &&
+    a.top < b.bottom - slack &&
+    b.top < a.bottom - slack
+  )
+}
+
+function meetsAny(b: Box, blocked: Box[]) {
+  for (let i = 0; i < blocked.length; i++) {
+    if (meets(b, blocked[i])) return true
+  }
+  return false
+}
+
+// A value held within two limits, or midway between them where they cross, as they do for a bubble
+// wider or taller than the room
+function clamp(value: number, low: number, high: number) {
+  return low > high ? (low + high) / 2 : Math.min(Math.max(value, low), high)
+}
 
 export function SpeechBubble() {
   const line = useGame((s) => s.line)
@@ -134,8 +185,10 @@ export function SpeechBubble() {
   }
 
   // drei's placement, the anchor projected into the canvas, moved only as far as it must go to
-  // show the bubble whole: inside the room, then out of each HUD rectangle it overlaps, along the
-  // shorter way out. An anchor behind the camera puts the bubble at the edge on the anchor's side
+  // show the bubble whole: into the room, then to the nearest place in it clear of every HUD
+  // rectangle. An anchor behind the camera puts the bubble at the edge on the anchor's side. It
+  // allocates only the position it returns, a new one each frame, since drei keeps the last to
+  // compare with
   const place = (group: Object3D, camera: Camera, size: { width: number; height: number }) => {
     anchor.setFromMatrixPosition(group.matrixWorld)
     seen.copy(anchor).applyMatrix4(camera.matrixWorldInverse)
@@ -149,23 +202,10 @@ export function SpeechBubble() {
       return [x, y]
     }
     const { bounds, blocked } = r
-    const box = (cx: number, cy: number, below: number): Box => ({
-      left: cx - width / 2,
-      top: cy - height / 2,
-      right: cx + width / 2,
-      bottom: cy + height / 2 + below,
-    })
-    const inside = (b: Box) =>
-      b.left >= bounds.left &&
-      b.top >= bounds.top &&
-      b.right <= bounds.right &&
-      b.bottom <= bounds.bottom
-    const meets = (a: Box, b: Box) =>
-      a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
     const behind = seen.z > 0
     if (!behind) {
-      const anchored = box(x, y, tail)
-      if (inside(anchored) && !blocked.some((b) => meets(anchored, b))) {
+      bubbleBox(spot, x, y, width, height, tail)
+      if (inside(spot, bounds) && !meetsAny(spot, blocked)) {
         setMoved(false)
         return [x, y]
       }
@@ -177,30 +217,46 @@ export function SpeechBubble() {
       x = size.width / 2 + (across / length) * size.width * 4
       y = size.height / 2 + (up / length) * size.height * 4
     }
-    const clamp = (value: number, low: number, high: number) =>
-      low > high ? (low + high) / 2 : Math.min(Math.max(value, low), high)
     x = clamp(x, bounds.left + width / 2, bounds.right - width / 2)
     y = clamp(y, bounds.top + height / 2, bounds.bottom - height / 2)
-    for (let pass = 0; pass < 3; pass++) {
-      let clear = true
-      for (const b of blocked) {
-        const now = box(x, y, 0)
-        if (!meets(now, b)) continue
-        clear = false
-        const ways = [
-          [b.left - now.right, 0],
-          [b.right - now.left, 0],
-          [0, b.top - now.bottom],
-          [0, b.bottom - now.top],
-        ]
-          .filter(([dx, dy]) => inside(box(x + dx, y + dy, 0)))
-          .sort((p, q) => Math.abs(p[0] + p[1]) - Math.abs(q[0] + q[1]))
-        if (ways.length) {
-          x += ways[0][0]
-          y += ways[0][1]
+    // Then the nearest place in the room clear of every HUD rectangle at once, since the nearest
+    // way out of one can lead into another, as from the tab onto the buttons below it. That place
+    // lies level with where the bubble is, or against an edge of the room or of a rectangle, on
+    // each axis, so only those are tried
+    if (meetsAny(bubbleBox(spot, x, y, width, height, 0), blocked)) {
+      triedX[0] = x
+      triedX[1] = bounds.left + width / 2
+      triedX[2] = bounds.right - width / 2
+      triedY[0] = y
+      triedY[1] = bounds.top + height / 2
+      triedY[2] = bounds.bottom - height / 2
+      for (let i = 0; i < blocked.length; i++) {
+        const b = blocked[i]
+        const at = 3 + 2 * i
+        triedX[at] = b.left - width / 2
+        triedX[at + 1] = b.right + width / 2
+        triedY[at] = b.top - height / 2
+        triedY[at + 1] = b.bottom + height / 2
+      }
+      const tried = 3 + 2 * blocked.length
+      let nearest = Infinity
+      let bestX = x
+      let bestY = y
+      for (let i = 0; i < tried; i++) {
+        const cx = triedX[i]
+        for (let j = 0; j < tried; j++) {
+          const cy = triedY[j]
+          const distance = Math.hypot(cx - x, cy - y)
+          if (distance >= nearest) continue
+          bubbleBox(spot, cx, cy, width, height, 0)
+          if (!inside(spot, bounds) || meetsAny(spot, blocked)) continue
+          nearest = distance
+          bestX = cx
+          bestY = cy
         }
       }
-      if (clear) break
+      x = bestX
+      y = bestY
     }
     setMoved(true)
     return [x, y]
