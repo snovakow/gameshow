@@ -1,21 +1,18 @@
 import { useCursor } from '@react-three/drei'
 import { useFrame, useLoader, type ThreeEvent } from '@react-three/fiber'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { DoubleSide, Mesh, MeshPhongMaterial, PlaneGeometry, TextureLoader, type Group } from 'three'
 import { FontLoader } from 'three/addons/loaders/FontLoader.js'
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js'
 import { useGame } from '../store.ts'
 import { fontUrl, gold } from './materials.ts'
 import { Prize } from './Prize.tsx'
+import { usePressTravel } from './usePressTravel.ts'
 
 const size = 0.75
 const half = size / 2
 // How far the open lid swings back; the prize rises a crate's height with it
 const openAngle = -0.6 * Math.PI
-// A press whose pointer strays further than this, in CSS pixels, is a drag to look around and
-// not a pick. R3F's own click distance is only the straight line from the press to the release,
-// so a drag out and back would pass it
-const maxTravel = 6
 
 // The lid's swing: where it is (0 shut, 1 open), and where the current swing started
 interface Swing {
@@ -68,9 +65,8 @@ export function Crate({ index, x, z }: { index: number; x: number; z: number }) 
   const lid = useRef<Group>(null)
   const rise = useRef<Group>(null)
   const swing = useRef<Swing>({ progress: 0, from: 0, target: 0, start: 0 })
-  // How far the current press has strayed, or null when no press began on this crate
-  const travel = useRef<number | null>(null)
-  const stopTracking = useRef<(() => void) | null>(null)
+  // A drag that starts on the crate looks around rather than picking it
+  const { onPointerDown, isTap } = usePressTravel()
 
   // A layout effect, so the sides have their material before the first frame draws them
   useLayoutEffect(() => {
@@ -92,13 +88,6 @@ export function Crate({ index, x, z }: { index: number; x: number; z: number }) 
       map.dispose()
     }
   }, [crate])
-
-  useEffect(
-    () => () => {
-      stopTracking.current?.()
-    },
-    [],
-  )
 
   useFrame(({ clock }) => {
     const { open, shut } = useGame.getState().crates[index]
@@ -123,46 +112,9 @@ export function Crate({ index, x, z }: { index: number; x: number; z: number }) 
     if (!open && !shut && s.progress === 0) useGame.getState().reportShut(index)
   })
 
-  // The press is tracked on the window for its whole length, since the pointer may leave the
-  // crate and come back before it's released
-  const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
-    stopTracking.current?.()
-    const { pointerId, clientX, clientY } = e.nativeEvent
-    travel.current = 0
-    const stray = (event: PointerEvent) => {
-      const distance = Math.hypot(event.clientX - clientX, event.clientY - clientY)
-      travel.current = Math.max(travel.current ?? 0, distance)
-    }
-    const onMove = (event: PointerEvent) => {
-      if (event.pointerId === pointerId) stray(event)
-    }
-    const onUp = (event: PointerEvent) => {
-      if (event.pointerId !== pointerId) return
-      stray(event)
-      stop()
-    }
-    const onCancel = (event: PointerEvent) => {
-      if (event.pointerId !== pointerId) return
-      travel.current = null
-      stop()
-    }
-    const stop = () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-      window.removeEventListener('pointercancel', onCancel)
-      stopTracking.current = null
-    }
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-    window.addEventListener('pointercancel', onCancel)
-    stopTracking.current = stop
-  }
-
   const onClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation()
-    const strayed = travel.current
-    travel.current = null
-    if (strayed === null || strayed > maxTravel) return
+    if (!isTap()) return
     // The store ignores whichever isn't the player's turn
     const game = useGame.getState()
     if (game.awaiting === 'pick') game.pick(index)
@@ -172,6 +124,8 @@ export function Crate({ index, x, z }: { index: number; x: number; z: number }) 
   return (
     <group
       position={[x, half, z]}
+      // Marks it as a crate to the host's box, which a tap may reach it through (Host.tsx)
+      userData={{ crate: index }}
       onPointerDown={onPointerDown}
       onClick={onClick}
       onPointerOver={() => setHovered(true)}

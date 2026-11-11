@@ -30,11 +30,11 @@ function fovFor(aspect: number) {
 // What the fit holds besides the crates, which are 0.75 on a side as Crate.tsx builds them: the
 // pick's ring on the floor around each, as Crate.tsx draws it, whose outer edge is the corners of
 // a 64-sided polygon 0.68 from the crate's middle; the host idling on her spot, measured from her
-// model, whose hair reaches 1.67; and the bubble's anchor, where SpeechBubble.tsx pins it above
-// her spot
+// model, whose hair reaches 1.67, a box Host.tsx also uses to take presses in her place; and the
+// bubble's anchor, where SpeechBubble.tsx pins it above her spot
 const crateSize = 0.75
 const ring = { radius: 0.68, sides: 64, height: 0.004 }
-const host = { min: new Vector3(-0.3, 0, 0.82), max: new Vector3(0.26, 1.67, 1.27) }
+export const hostBox = { min: new Vector3(-0.3, 0, 0.82), max: new Vector3(0.26, 1.67, 1.27) }
 const bubbleAnchor = new Vector3(0, 1.9, 1)
 // The bubble at its largest, in CSS pixels, as index.css lays it out and SpeechBubble.tsx
 // centres it on its anchor: 260 wide and four lines of 15 px at 1.3, each with its padding,
@@ -63,7 +63,7 @@ function framedPoints(crates: [number, number][]) {
       points.push(new Vector3(x + radius * Math.cos(angle), height, z + radius * Math.sin(angle)))
     }
   }
-  return [...points, ...corners(host.min, host.max)]
+  return [...points, ...corners(hostBox.min, hostBox.max)]
 }
 
 // How far back the camera must stand for a point to fit on one side of the view, given how far
