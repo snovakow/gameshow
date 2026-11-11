@@ -200,10 +200,9 @@ export function validateConfig(input: unknown, kind: ShowKind): Validation {
       }
       // A blank variant keeps nothing, and a key left with none keeps its default
       const kept = list.map((variant) => variant.trim()).filter(Boolean)
-      for (const variant of kept) {
-        for (const unknown of unknownPlaceholders(variant)) {
-          errors.push(`The host's line "${key}" uses {${unknown}}, which isn't a placeholder.`)
-        }
+      // Each name once per line, however many variants use it, so no problem is listed twice
+      for (const unknown of new Set(kept.flatMap((variant) => unknownPlaceholders(variant)))) {
+        errors.push(`The host's line "${key}" uses {${unknown}}, which isn't a placeholder.`)
       }
       if (kept.length) lines[key] = kept
     }

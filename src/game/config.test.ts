@@ -96,6 +96,11 @@ void test('each rule, broken alone, is rejected with its message', () => {
       'The host\'s line "won" uses {prise}, which isn\'t a placeholder.',
     ],
     [
+      'unknown placeholder in two variants',
+      gift('lines', { won: ['You won {prise}!', 'The {prise} is yours!'] }),
+      'The host\'s line "won" uses {prise}, which isn\'t a placeholder.',
+    ],
+    [
       'link too long',
       gift('lines', { won: ['You won {prize}! '.repeat(200)] }),
       "The link would be longer than 4,000 characters; shorten the host's lines.",

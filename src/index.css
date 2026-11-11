@@ -317,3 +317,219 @@ body {
     opacity: 0;
   }
 }
+
+/* The pages without a stage: the gift maker and the message for a link that won't open. The body
+   never scrolls, for the stage's sake, so the page scrolls itself; each edge keeps the gutter or
+   the safe-area inset, whichever is wider */
+.page {
+  --gutter: 16px;
+  --gold: #ffd700;
+  --field: rgb(255 255 255 / 8%);
+  --line: rgb(255 255 255 / 25%);
+  box-sizing: border-box;
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  padding: max(24px, env(safe-area-inset-top, 0px)) max(var(--gutter), env(safe-area-inset-right, 0px))
+    max(32px, env(safe-area-inset-bottom, 0px)) max(var(--gutter), env(safe-area-inset-left, 0px));
+  background: #10101e;
+  font: 16px/1.45 system-ui, sans-serif;
+}
+
+.page > * {
+  max-width: 640px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.page h1 {
+  margin-top: 0;
+  color: var(--gold);
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.page h2 {
+  margin: 28px auto 10px;
+  font-size: 18px;
+}
+
+.page a {
+  color: var(--gold);
+}
+
+.page .hint {
+  color: rgb(255 255 255 / 60%);
+  font-size: 14px;
+}
+
+.page .field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.page .field > .label,
+.page .choices > .label,
+.page .choice .label {
+  font-weight: 600;
+}
+
+/* 16 px text, below which a phone zooms the page in on the field it focuses */
+.page input[type='text'],
+.page textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--field);
+  color: #fff;
+  font: 16px/1.35 system-ui, sans-serif;
+}
+
+.page textarea {
+  resize: vertical;
+}
+
+.page textarea::placeholder {
+  color: rgb(255 255 255 / 40%);
+}
+
+.page .choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.page .choice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.page .choice:has(input:checked) {
+  border-color: var(--gold);
+}
+
+.page .choice input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--gold);
+}
+
+.page .choice .hint {
+  display: block;
+}
+
+.page .lines {
+  margin-top: 28px;
+}
+
+.page .lines summary {
+  min-height: 44px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 44px;
+  cursor: pointer;
+}
+
+.page table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.page th,
+.page td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgb(255 255 255 / 12%);
+  text-align: left;
+}
+
+.page thead th {
+  font-size: 14px;
+}
+
+.page .warning {
+  padding: 10px 12px;
+  border-left: 4px solid #ff9f1a;
+  border-radius: 6px;
+  background: rgb(255 159 26 / 12%);
+}
+
+.page .errors {
+  color: #ffb3a8;
+}
+
+.page .link {
+  font-family: monospace;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.page .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.page button,
+.page .button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  min-height: 48px;
+  padding: 0 20px;
+  border: 2px solid var(--gold);
+  border-radius: 24px;
+  background: rgb(20 20 40 / 85%);
+  color: #fff;
+  font: 600 17px system-ui, sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.page .secondary {
+  border-color: rgb(255 255 255 / 45%);
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.page button:disabled {
+  border-color: rgb(255 255 255 / 20%);
+  color: rgb(255 255 255 / 40%);
+  cursor: default;
+}
+
+.page .saved {
+  margin-top: 20px;
+}
+
+.page.message {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.page.message > * {
+  width: 100%;
+}
+
+.page .details {
+  color: rgb(255 255 255 / 60%);
+  font-size: 14px;
+}
