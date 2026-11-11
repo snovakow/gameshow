@@ -7,8 +7,9 @@ import { useGame } from './store.ts'
 
 const camera: CameraProps = { fov: 50, near: 0.25, far: 30, position: [1, 2, 4] }
 
-// The full device pixel ratio, uncapped, where R3F would cap it at 2
-const dpr: Dpr = [0, Infinity]
+// The device's pixel ratio, capped at 2: a phone at 3 would draw more than twice the pixels for
+// a sharpness few can see
+const dpr: Dpr = [0, 2]
 
 async function createRenderer({ canvas }: { canvas: object }) {
   if (!(canvas instanceof HTMLCanvasElement)) {
