@@ -2,7 +2,7 @@
 
 **TypeScript + React + three.js + React Three Fiber + Vite + WebGPU**
 
-Gameshow is a 3D game-show stage in the browser, being built toward a game of the Monty Hall problem: three crates, one prize, and the question of whether to switch. Today the stage is set, with a host, three crates you can open to reveal what's inside, and a mirror-like floor. The game's rules are written and tested, but aren't on the stage yet.
+Gameshow is a 3D game-show stage in the browser, being built toward a game of the Monty Hall problem: three crates, one prize, and the question of whether to switch. Today the stage is set, with a host, three crates you can open to reveal what's inside, and a mirror-like floor. The game's rules, prizes, settings and lines for the host are written and tested, but aren't on the stage yet.
 
 **Live demo:** [snovakow.com/gameshow](https://snovakow.com/gameshow/)
 
