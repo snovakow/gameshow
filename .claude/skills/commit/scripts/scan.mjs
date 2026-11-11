@@ -447,7 +447,7 @@ const versioning = !VERSION_FILE
 const attention = [
   ...operations.map((operation) => `${operation} in progress`),
   ...(hasHead && !branch ? ['HEAD is detached'] : []),
-  ...(behind ? [`branch is ${count(behind, 'commit')} behind ${upstream}`] : []),
+  ...(behind ? [`branch is ${count(behind, 'commit')} behind ${upstream}${ahead ? `, and carries ${count(ahead, 'unpushed commit')} of its own that would have to be rebased over what arrived` : ', and HEAD would fast-forward onto it'}`] : []),
   ...(branch && PROTECTED_BRANCHES.includes(branch) ? [`on ${branch}, a protected branch`] : []),
   ...(VERSION_AUTHOR && userName !== VERSION_AUTHOR ? [`git user.name is ${userName ?? 'unset'}, not ${VERSION_AUTHOR}; a version commit would not count`] : []),
   ...(official && (headVersion !== officialVersion || worktreeVersion !== officialVersion)
