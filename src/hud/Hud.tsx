@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { useGame } from '../store.ts'
 import { Tab } from './Tab.tsx'
 import { TitleCard } from './TitleCard.tsx'
+import { useWakeLock } from './useWakeLock.ts'
 
 // A temporary panel folder for trying each game in the demo, applied at the next Start
 function useGameFolder() {
@@ -46,11 +47,17 @@ export function Hud() {
   const decide = useGame((s) => s.decide)
   const next = useGame((s) => s.next)
   const playAgain = useGame((s) => s.playAgain)
+  const keepAwake = useWakeLock()
+
+  const onStart = () => {
+    start()
+    if (useGame.getState().phase !== 'title') keepAwake()
+  }
 
   // Each data-hud, like the bubble's data-line, is a stable hook for driving the page in a browser
   return (
     <div className="hud">
-      {phase === 'title' ? <TitleCard onStart={start} /> : <Tab />}
+      {phase === 'title' ? <TitleCard onStart={onStart} /> : <Tab />}
       <div className="buttons">
         {awaiting === 'decision' && (
           <>

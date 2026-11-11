@@ -31,7 +31,7 @@ Gameshow started as plain three.js in JavaScript, and has been rebuilt onto this
 - **A tab** that keeps the round and the prize in play, a line for each round you've played, how staying and switching have each paid off in the Monty Hall game, and your total. At the end it stays up as your receipt.
 - **A reflective floor** under a sunny sky, with soft shadows and fog in the distance.
 - **A camera** that frames the crates, the ring that marks your pick, the host and her speech bubble on any screen, through a wider lens on a phone held upright, and frames them again when the screen turns or resizes.
-- **Made for phones first.** Buttons big enough for a thumb, a layout for each way the phone is held, with the tab in a corner on a wide screen and above the buttons on a tall one, all of it clear of a notch and the home bar.
+- **Made for phones first.** Buttons big enough for a thumb, a layout for each way the phone is held, with the tab in a corner on a wide screen and above the buttons on a tall one, all of it clear of a notch and the home bar, and the screen kept awake while a show runs, where the browser allows it.
 - **A control panel** for choosing the game, its prizes and how many rounds the next show plays, the host's stance, and her reactions and how quickly they blend. It starts folded away on a phone.
 - **A frame-rate meter** in the corner.
 
@@ -62,7 +62,7 @@ Looking around stops at the horizon, and the zoom has limits either way. A press
 
 You need Node.js 22.18 or later, and a browser with WebGPU or WebGL 2. Then run `npm install`, followed by `npm run dev`, and open the address it prints.
 
-To try it on a phone, run `npm run dev -- --host` instead and open the network address it prints on a phone on the same Wi-Fi. Over plain HTTP the phone renders with WebGL 2.
+To try it on a phone, run `npm run dev -- --host` instead and open the network address it prints on a phone on the same Wi-Fi. Over plain HTTP the phone renders with WebGL 2, and the screen may dim during a show, since browsers only keep it awake for a secure site.
 
 `npm run lint` and `npm run typecheck` check the code, and `npm test` runs the tests. `npm run build` makes a static site in `dist/`. It uses relative paths, so it works from any folder you copy it to, and `npm run preview` serves it locally.
 
