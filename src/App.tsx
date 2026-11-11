@@ -3,9 +3,10 @@ import { useEffect } from 'react'
 import { WebGPURenderer } from 'three/webgpu'
 import { Hud } from './hud/Hud.tsx'
 import { Stage } from './stage/Stage.tsx'
+import { standardFov } from './stage/useFraming.ts'
 import { useGame } from './store.ts'
 
-const camera: CameraProps = { fov: 50, near: 0.25, far: 30, position: [1, 2, 4] }
+const camera: CameraProps = { fov: standardFov, near: 0.25, far: 30, position: [1, 2, 4] }
 
 // The device's pixel ratio, capped at 2: a phone at 3 would draw more than twice the pixels for
 // a sharpness few can see

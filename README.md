@@ -29,7 +29,7 @@ Gameshow started as plain three.js in JavaScript, and has been rebuilt onto this
 - **Three crates** whose lids swing open and shut, raising a gold prize or a grey $0 as they open. A gold ring on the floor marks your pick.
 - **A tab** that keeps the round, the prize in play and your total.
 - **A reflective floor** under a sunny sky, with soft shadows and fog in the distance.
-- **A camera** that frames the crates, the host and her speech bubble on any screen, standing further back on a phone held upright, and frames them again when the screen turns or resizes.
+- **A camera** that frames the crates, the ring that marks your pick, the host and her speech bubble on any screen, through a wider lens on a phone held upright, and frames them again when the screen turns or resizes.
 - **A control panel** for choosing the game, its prizes and how many rounds the next show plays, the host's stance, and her reactions and how quickly they blend.
 - **A frame-rate meter** in the corner.
 
@@ -42,8 +42,8 @@ Gameshow started as plain three.js in JavaScript, and has been rebuilt onto this
 | Stay or switch | Click your crate to stay, or the other closed one to switch | Tap your crate to stay, or the other closed one to switch |
 | Skip ahead in what the host is saying | Click the speech bubble | Tap the speech bubble |
 | Look around | Drag with the left button | Drag with one finger |
-| Zoom | Scroll | Pinch |
-| Pan | Drag with the right button | Drag with two fingers |
+| Zoom | Scroll, or pinch on a trackpad | Pinch |
+| Pan | Drag with the right button, or with the left while holding Shift or Cmd | Drag with two fingers |
 | Choose the game, or change the host's stance or cue a reaction | Use the control panel | Use the control panel |
 
 Looking around stops at the horizon, and the zoom has limits either way. A press that turns into a drag looks around rather than picking the crate under it.

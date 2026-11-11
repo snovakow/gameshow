@@ -13,10 +13,27 @@ const nearest = opening.distanceTo(lookAt)
 // Everything framed stays within 95% of the view's half-width and half-height from its middle
 const reach = 0.95
 
+// The lens's vertical angle, in degrees, on most screens
+export const standardFov = 50
+// The narrowest screen the standard lens frames well, a tablet held upright at 820 by 1180, about
+// 35.9° across. A narrower screen, a phone held upright, widens the lens until it sees as far
+// across, rather than standing the camera back to near its limit
+const narrowestAspect = 820 / 1180
+
+// The lens for a screen's shape: the standard one, or wider on a screen narrower than the tablet's
+function fovFor(aspect: number) {
+  if (aspect >= narrowestAspect) return standardFov
+  const across = Math.tan(MathUtils.degToRad(standardFov) / 2) * narrowestAspect
+  return MathUtils.radToDeg(2 * Math.atan(across / aspect))
+}
+
 // What the fit holds besides the crates, which are 0.75 on a side as Crate.tsx builds them: the
-// host idling on her spot, measured from her model, whose hair reaches 1.67; and the bubble's
-// anchor, where SpeechBubble.tsx pins it above her spot
+// pick's ring on the floor around each, as Crate.tsx draws it, whose outer edge is the corners of
+// a 64-sided polygon 0.68 from the crate's middle; the host idling on her spot, measured from her
+// model, whose hair reaches 1.67; and the bubble's anchor, where SpeechBubble.tsx pins it above
+// her spot
 const crateSize = 0.75
+const ring = { radius: 0.68, sides: 64, height: 0.004 }
 const host = { min: new Vector3(-0.3, 0, 0.82), max: new Vector3(0.26, 1.67, 1.27) }
 const bubbleAnchor = new Vector3(0, 1.9, 1)
 // The bubble at its largest, in CSS pixels, as index.css lays it out and SpeechBubble.tsx
@@ -32,12 +49,20 @@ function corners(min: Vector3, max: Vector3) {
   return points
 }
 
-// The points that must show: every corner of each closed crate and of the host's box
+// The points that must show: every corner of each closed crate, of its ring and of the host's
+// box. The ring shows on one crate at a time, but any of them may be picked
 function framedPoints(crates: [number, number][]) {
   const half = crateSize / 2
   const points = crates.flatMap(([x, z]) =>
     corners(new Vector3(x - half, 0, z - half), new Vector3(x + half, crateSize, z + half)),
   )
+  const { radius, sides, height } = ring
+  for (const [x, z] of crates) {
+    for (let side = 0; side < sides; side++) {
+      const angle = (side / sides) * 2 * Math.PI
+      points.push(new Vector3(x + radius * Math.cos(angle), height, z + radius * Math.sin(angle)))
+    }
+  }
   return [...points, ...corners(host.min, host.max)]
 }
 
@@ -98,9 +123,10 @@ function fitDistance(
   )
 }
 
-// Fits the stage to the screen: the closed crates, the host and her bubble, with a margin. At the
-// opening it looks along the stage's opening line of sight; after a resize or a turn of the phone
-// it keeps the direction the player has turned to and refits only the distance
+// Fits the stage to the screen: the closed crates with their rings, the host and her bubble, with
+// a margin, through a lens widened on a screen held upright. At the opening it looks along the
+// stage's opening line of sight; after a resize or a turn of the phone it keeps the direction the
+// player has turned to and refits only the distance
 export function useFraming(
   controls: RefObject<CameraControlsImpl | null>,
   crates: [number, number][],
@@ -116,6 +142,12 @@ export function useFraming(
     const cameraControls = controls.current
     const { camera } = get()
     if (!cameraControls || !(camera instanceof PerspectiveCamera)) return
+    // The lens first, since the fit depends on how much it sees
+    const fov = fovFor(width / height)
+    if (camera.fov !== fov) {
+      camera.fov = fov
+      camera.updateProjectionMatrix()
+    }
     const points = framedPoints(crates)
     if (!opened.current) {
       const direction = opening.clone().sub(lookAt).normalize()

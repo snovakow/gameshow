@@ -7,6 +7,7 @@ import { Host } from './Host.tsx'
 import { Lights } from './Lights.tsx'
 import { SpeechBubble } from './SpeechBubble.tsx'
 import { useFraming } from './useFraming.ts'
+import { touches, useGestures } from './useGestures.ts'
 
 // Where the crates stand, on x and z; numbered 1, 2 and 3 in this order, which reads left to
 // right from the opening view
@@ -23,9 +24,11 @@ const instant = 0.0001
 export function Stage() {
   const controls = useRef<CameraControlsImpl>(null)
   useFraming(controls, crates)
+  useGestures(controls)
 
   // A trackpad pinch arrives as a ctrl+wheel, which camera-controls turns into the lens's zoom,
-  // outside the distance limits, so the zoom is pinned at 1. The framing sets the opening view
+  // outside the distance limits, so the zoom is pinned at 1 and the pinch moves the camera instead
+  // (useGestures). The framing sets the opening view and the lens
   return (
     <>
       <CameraControls
@@ -38,6 +41,7 @@ export function Stage() {
         maxZoom={1}
         smoothTime={instant}
         draggingSmoothTime={instant}
+        touches={touches}
       />
       <Lights />
       <Backdrop />
