@@ -1,7 +1,7 @@
 import { useAnimations } from '@react-three/drei'
 import { useLoader } from '@react-three/fiber'
 import { button, folder, useControls } from 'leva'
-import { useCallback, useEffect, useMemo, useRef, type RefObject } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from 'react'
 import { LoopOnce, LoopRepeat, type AnimationAction, type Object3D } from 'three'
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
 import type { PoseName } from '../game/director.ts'
@@ -54,15 +54,18 @@ export function useHostAnimations(model: RefObject<Object3D | null>) {
       if (!action || action === active.current) return
       const previous = active.current
       active.current = action
-      // Nothing is playing yet, so the first stance starts at once rather than fading in
+      // Nothing is playing yet, so the first stance starts at once rather than fading in, and is
+      // applied now rather than at the next frame, which would first draw her in her model's own
+      // pose, lying on the floor
       if (!previous) {
         action.play()
+        mixer.update(0)
         return
       }
       previous.fadeOut(duration)
       action.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).fadeIn(duration).play()
     },
-    [actions],
+    [actions, mixer],
   )
 
   const poseCue = useGame((s) => s.poseCue)
@@ -112,7 +115,8 @@ export function useHostAnimations(model: RefObject<Object3D | null>) {
     }
   }, [clips, mixer, model])
 
-  useEffect(() => {
+  // In the commit that adds her to the stage, before any frame can draw her
+  useLayoutEffect(() => {
     fadeTo(stance, get('stanceDuration'))
   }, [fadeTo, get, stance])
 
