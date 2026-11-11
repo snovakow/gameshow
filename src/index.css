@@ -15,6 +15,21 @@ body {
   overscroll-behavior: none;
 }
 
+/* The leva panel, drawn by leva itself at the top right */
+.panel {
+  display: contents;
+}
+
+/* leva lets its open panel's folders grow to the viewport's height less its title bar and margins,
+   then scroll inside it, but measures the viewport with 100vh, which on a phone is the height with
+   the browser's bars hidden, so a phone on its side showing them cut the panel off; this measures
+   the height as shown and keeps the panel's foot clear of the home bar */
+.panel > div > :last-child {
+  --foot: max(10px, env(safe-area-inset-bottom, 0px));
+  max-height: calc(100vh - 10px - var(--leva--titleBarHeight, 39px) - var(--foot));
+  max-height: calc(100dvh - 10px - var(--leva--titleBarHeight, 39px) - var(--foot));
+}
+
 /* The show's title card, tab and buttons, over the canvas; only the controls themselves take
    presses. The safe-area insets, which viewport-fit=cover in index.html makes the browser report,
    keep all of it clear of a notch and the home bar: each edge keeps the gutter or the inset,

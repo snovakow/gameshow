@@ -37,8 +37,11 @@ function App() {
     <>
       {/* Ahead of every panel folder, so leva uses this panel rather than making one of its own;
           and outside StrictMode, whose second run of leva's own effects would fix the open
-          panel's height before the stage adds its folders */}
-      <Leva collapsed={collapsed} />
+          panel's height before the stage adds its folders. The wrapper draws nothing; it's the
+          hook for the panel's height on a phone (index.css) */}
+      <div className="panel">
+        <Leva collapsed={collapsed} />
+      </div>
       <StrictMode>
         <Canvas gl={createRenderer} camera={camera} flat shadows="percentage" dpr={dpr}>
           <Stage />
