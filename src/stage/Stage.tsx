@@ -92,7 +92,7 @@ export function Stage() {
       {/* Made afresh for each look, whose tone mapping differs: a change of tone mapping makes
           the pipeline rebuild its frame, which would set the same bloom up again beside its first
           set of blur passes */}
-      {pipeline && <Pipeline key={look} />}
+      {pipeline && <Pipeline key={look} crates={crates} />}
     </>
   )
 }

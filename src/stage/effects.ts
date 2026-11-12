@@ -49,6 +49,10 @@ export interface Effects {
   lightCues: boolean
   // The camera pulling back for a win and swinging wide for the finale
   cameraMoves: boolean
+  // Long horizontal streaks of light through whatever shines, as an anamorphic lens draws them
+  streaks: boolean
+  // The picture bursting outward from the winning crate as a win is revealed
+  zoomBurst: boolean
   // The most device pixels drawn for each CSS pixel
   resolution: number
 }
@@ -72,6 +76,8 @@ type Switches = Pick<
   | 'flames'
   | 'lightCues'
   | 'cameraMoves'
+  | 'streaks'
+  | 'zoomBurst'
 >
 
 export type Preset = 'phone' | 'full' | 'off'
@@ -99,6 +105,8 @@ export const presets: Record<Preset, Switches> = {
     flames: true,
     lightCues: true,
     cameraMoves: true,
+    streaks: false,
+    zoomBurst: false,
   },
   full: {
     bloom: true,
@@ -118,6 +126,8 @@ export const presets: Record<Preset, Switches> = {
     flames: true,
     lightCues: true,
     cameraMoves: true,
+    streaks: true,
+    zoomBurst: true,
   },
   off: {
     bloom: false,
@@ -137,6 +147,8 @@ export const presets: Record<Preset, Switches> = {
     flames: false,
     lightCues: false,
     cameraMoves: false,
+    streaks: false,
+    zoomBurst: false,
   },
 }
 
@@ -169,8 +181,13 @@ export const useEffects = create<Effects>(() => ({
 }))
 
 // Whether any switch needs the render pipeline. With none on, the stage renders as it always has
-export const usesPipeline = ({ bloom, outline, antialiasing }: Switches) =>
-  bloom || outline || antialiasing === 'fxaa'
+export const usesPipeline = ({
+  bloom,
+  outline,
+  antialiasing,
+  streaks,
+  zoomBurst,
+}: Switches) => bloom || outline || antialiasing === 'fxaa' || streaks || zoomBurst
 
 // The panel's Effects folder, kept below the stage's own folders and above the Sound folder. It
 // writes the store, so the panel shows what a preset chose and the two never disagree
@@ -277,6 +294,16 @@ export function useEffectsFolder() {
           label: 'Light cues',
           hint: "The spots, the rings and the title's bulbs answer the show",
         },
+        streaks: {
+          value: presets.phone.streaks,
+          label: 'Streaks',
+          hint: 'Streaks of light across whatever shines, as a widescreen lens draws them',
+        },
+        zoomBurst: {
+          value: presets.phone.zoomBurst,
+          label: 'Zoom burst',
+          hint: 'The picture bursts outward from the winning crate',
+        },
         resolution: {
           ...resolutionSlider,
           label: 'Resolution',
@@ -303,6 +330,7 @@ export function useEffectsFolder() {
   const { look, bloom, bloomStrength, outline, antialiasing, reflection, glossy, gloss } = values
   const { rings, ringBrightness, spotlights, shadowSize, haze, hazeDensity, marquee } = values
   const { goldShine, confetti, confettiCount, fireworks, flames, lightCues, cameraMoves } = values
+  const { streaks, zoomBurst } = values
   const { resolution } = values
   useEffect(() => {
     useEffects.setState({
@@ -328,6 +356,8 @@ export function useEffectsFolder() {
       flames,
       lightCues,
       cameraMoves,
+      streaks,
+      zoomBurst,
       resolution,
     })
   }, [
@@ -353,6 +383,8 @@ export function useEffectsFolder() {
     flames,
     lightCues,
     cameraMoves,
+    streaks,
+    zoomBurst,
     resolution,
   ])
 }
