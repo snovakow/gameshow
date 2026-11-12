@@ -34,6 +34,8 @@ export interface Effects {
   // A haze lying low over the studio floor, and how thick it is
   haze: boolean
   hazeDensity: number
+  // The show's title in lights over the stage
+  marquee: boolean
   // The most device pixels drawn for each CSS pixel
   resolution: number
 }
@@ -49,6 +51,7 @@ type Switches = Pick<
   | 'spotlights'
   | 'shadowSize'
   | 'haze'
+  | 'marquee'
 >
 
 export type Preset = 'phone' | 'full' | 'off'
@@ -67,6 +70,7 @@ export const presets: Record<Preset, Switches> = {
     spotlights: true,
     shadowSize: 1024,
     haze: true,
+    marquee: true,
   },
   full: {
     bloom: true,
@@ -78,6 +82,7 @@ export const presets: Record<Preset, Switches> = {
     spotlights: true,
     shadowSize: 2048,
     haze: true,
+    marquee: true,
   },
   off: {
     bloom: false,
@@ -89,6 +94,7 @@ export const presets: Record<Preset, Switches> = {
     spotlights: false,
     shadowSize: 1024,
     haze: false,
+    marquee: false,
   },
 }
 
@@ -187,6 +193,11 @@ export function useEffectsFolder() {
           hint: 'A haze lying low over the studio floor',
         },
         hazeDensity: { ...hazeSlider, label: 'Thickness', hint: 'How thick the haze is' },
+        marquee: {
+          value: presets.phone.marquee,
+          label: 'Marquee',
+          hint: "The show's title over the stage, ringed by chasing lights",
+        },
         resolution: {
           ...resolutionSlider,
           label: 'Resolution',
@@ -202,7 +213,8 @@ export function useEffectsFolder() {
   }, [set])
 
   const { look, bloom, bloomStrength, outline, antialiasing, reflection, glossy, gloss } = values
-  const { rings, ringBrightness, spotlights, shadowSize, haze, hazeDensity, resolution } = values
+  const { rings, ringBrightness, spotlights, shadowSize, haze, hazeDensity, marquee } = values
+  const { resolution } = values
   useEffect(() => {
     useEffects.setState({
       look: look === 'daylight' ? 'daylight' : 'studio',
@@ -219,6 +231,7 @@ export function useEffectsFolder() {
       shadowSize: shadowSize === 2048 ? 2048 : 1024,
       haze,
       hazeDensity,
+      marquee,
       resolution,
     })
   }, [
@@ -236,6 +249,7 @@ export function useEffectsFolder() {
     shadowSize,
     haze,
     hazeDensity,
+    marquee,
     resolution,
   ])
 }

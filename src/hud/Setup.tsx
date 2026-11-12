@@ -8,6 +8,7 @@ import {
   type PrizeMode,
 } from '../game/config.ts'
 import { encodeLink, giftHash, progressKey } from '../game/link.ts'
+import { marqueeTitle, missingCharacters } from '../game/marquee.ts'
 import { simulate, type Outcomes } from '../game/prizes.ts'
 import { parseProgress } from '../game/progress.ts'
 import { mulberry32 } from '../game/random.ts'
@@ -374,7 +375,8 @@ function LinkPanel({ payload, config }: { payload: string; config: Config }) {
 }
 
 // The gift maker: every setting with live checks, a preview of how shows tend to end, the link,
-// a trial run that leaves no progress, and a warning where the stage can't draw the currency.
+// a trial run that leaves no progress, and a warning where the stage can't draw the currency or
+// the title.
 // Plain page, no stage
 export function Setup() {
   const [draft, setDraft] = useState(readDraft)
@@ -401,9 +403,12 @@ export function Setup() {
   )
   const number = (field: TextField) => text(field, { inputMode: 'numeric' })
 
-  // The stage draws prize amounts in 3D, currency first, with a typeface that shows ? for a
-  // character it lacks; the tab and the host's lines are text and show anything
-  const missing = glyphs ? [...new Set(draft.currency.trim())].filter((c) => !glyphs.has(c)) : []
+  // The stage draws prize amounts in 3D, currency first, and its title over the stage in capitals,
+  // with a typeface that shows ? for a character it lacks; the tab and the host's lines are text
+  // and show anything
+  const missing = glyphs ? missingCharacters(draft.currency.trim(), glyphs) : []
+  const title = marqueeTitle({ occasion: draft.occasion, name: draft.name })
+  const missingInTitle = glyphs ? missingCharacters(title, glyphs) : []
   const withinRange = draft.prizes === 'withinRange'
   const montyHall = draft.game === 'montyHall'
 
@@ -426,6 +431,13 @@ export function Setup() {
         <Field label="The occasion" hint={'As in "Happy birthday".'}>
           {text('occasion')}
         </Field>
+        {missingInTitle.length > 0 && (
+          <p className="warning" data-setup="title-glyphs">
+            The stage spells out "{title}" in lights with a typeface that has no{' '}
+            {missingInTitle.join(' or ')}, so the title will show ? in its place. The host's lines
+            show it as typed.
+          </p>
+        )}
       </section>
 
       <section>
