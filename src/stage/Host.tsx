@@ -5,11 +5,12 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { clone } from 'three/addons/utils/SkeletonUtils.js'
 import { useGame } from '../store.ts'
 import { bodyHitTest } from './bodyHit.ts'
-import { hostBox } from './useFraming.ts'
+import { hostBox, hostSpot } from './layout.ts'
 import { useHostAnimations } from './useHostAnimations.ts'
 import { usePressTravel } from './usePressTravel.ts'
 
 const ignoreRays = () => undefined
+const spot = hostSpot.toArray()
 
 // Her standing pose's box on the stage, the one the framing fits, which takes presses in her place
 const stand = new Box3(hostBox.min, hostBox.max)
@@ -59,7 +60,7 @@ export function Host() {
 
   return (
     <>
-      <primitive ref={root} object={model} rotation-x={-Math.PI / 2} position-z={1} />
+      <primitive ref={root} object={model} rotation-x={-Math.PI / 2} position={spot} />
       {/* Twelve triangles to test where her body has 28,106. Hidden, it draws nothing and casts
           no shadow, but rays are tested against an object's layers, not its visibility, so it
           still takes presses */}

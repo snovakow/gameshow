@@ -7,7 +7,8 @@ import type { Phase } from '../game/director.ts'
 import type { LineKey } from '../game/script.ts'
 import { useGame, type Awaiting } from '../store.ts'
 import { useEffects } from './effects.ts'
-import { framedPosition, lookAt } from './useFraming.ts'
+import { lookAt } from './layout.ts'
+import { framedPosition } from './useFraming.ts'
 
 const { ACTION } = CameraControlsImpl
 

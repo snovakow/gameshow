@@ -7,6 +7,7 @@ import { useEffects, useEffectsFolder, usesPipeline } from './effects.ts'
 import { Celebrations } from './effects/Celebrations.tsx'
 import { Floor } from './Floor.tsx'
 import { Host } from './Host.tsx'
+import { crates } from './layout.ts'
 import { Lights } from './Lights.tsx'
 import { Pipeline } from './Pipeline.tsx'
 import { SpeechBubble } from './SpeechBubble.tsx'
@@ -14,14 +15,6 @@ import { Studio } from './studio/Studio.tsx'
 import { useFraming } from './useFraming.ts'
 import { touches, useGestures } from './useGestures.ts'
 import { instant, useHomeView } from './useHomeView.ts'
-
-// Where the crates stand, on x and z; numbered 1, 2 and 3 in this order, which reads left to
-// right from the opening view
-const crates: [number, number][] = [
-  [-1.5, 0],
-  [0, -1.5],
-  [1.5, 0],
-]
 
 // The lowest the view tilts, 10° above level: nearer the horizon the stage is seen head-on and the
 // floor, drawn from above only, thins to nothing

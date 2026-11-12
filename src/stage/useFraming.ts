@@ -2,11 +2,8 @@ import type { CameraControlsImpl } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { useLayoutEffect, useRef, type RefObject } from 'react'
 import { MathUtils, PerspectiveCamera, Vector3 } from 'three'
+import { bubbleAnchor, hostBox, lookAt, opening } from './layout.ts'
 
-// The opening view the stage has always had: from (1, 2, 4), looking at a point half a unit above
-// the middle of the floor
-const opening = new Vector3(1, 2, 4)
-export const lookAt = new Vector3(0, 0.5, 0)
 // The framing never brings the camera nearer than the opening view, so a screen as wide as a
 // desktop's keeps exactly that view
 const nearest = opening.distanceTo(lookAt)
@@ -29,13 +26,10 @@ function fovFor(aspect: number) {
 
 // What the fit holds besides the crates, which are 0.75 on a side as Crate.tsx builds them: the
 // pick's ring on the floor around each, as Crate.tsx draws it, whose outer edge is the corners of
-// a 64-sided polygon 0.68 from the crate's middle; the host idling on her spot, measured from her
-// model, whose hair reaches 1.67, a box Host.tsx also uses to take presses in her place; and the
+// a 64-sided polygon 0.68 from the crate's middle; the host idling on her spot, in her box; and the
 // bubble's anchor, where SpeechBubble.tsx pins it above her spot
 const crateSize = 0.75
 const ring = { radius: 0.68, sides: 64, height: 0.004 }
-export const hostBox = { min: new Vector3(-0.3, 0, 0.82), max: new Vector3(0.26, 1.67, 1.27) }
-const bubbleAnchor = new Vector3(0, 1.9, 1)
 // The bubble at its largest, in CSS pixels, as index.css lays it out and SpeechBubble.tsx
 // centres it on its anchor: 260 wide and four lines of 15 px at 1.3, each with its padding,
 // and the tail below

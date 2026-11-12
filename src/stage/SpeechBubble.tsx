@@ -3,10 +3,10 @@ import { useThree } from '@react-three/fiber'
 import { useEffect, useRef, type SyntheticEvent } from 'react'
 import { Vector3, type Camera, type Object3D } from 'three'
 import { useGame } from '../store.ts'
+import { bubbleAnchor } from './layout.ts'
 
-// Above the host's spot rather than her head, which moves while she dances; her head's top is at
-// about 1.59
-const position: [number, number, number] = [0, 1.9, 1]
+// Above the host's spot rather than her head, which moves while she dances
+const position = bubbleAnchor.toArray()
 // drei's default puts the bubble above every other layer of the page; this keeps it under the
 // HUD, the panel and the frame-rate meter
 const zIndexRange: [number, number] = [20, 0]
