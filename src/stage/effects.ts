@@ -47,6 +47,8 @@ export interface Effects {
   flames: boolean
   // The studio's spots, rings and bulbs answering the show's moments
   lightCues: boolean
+  // The camera pulling back for a win and swinging wide for the finale
+  cameraMoves: boolean
   // The most device pixels drawn for each CSS pixel
   resolution: number
 }
@@ -69,6 +71,7 @@ type Switches = Pick<
   | 'fireworks'
   | 'flames'
   | 'lightCues'
+  | 'cameraMoves'
 >
 
 export type Preset = 'phone' | 'full' | 'off'
@@ -95,6 +98,7 @@ export const presets: Record<Preset, Switches> = {
     fireworks: true,
     flames: true,
     lightCues: true,
+    cameraMoves: true,
   },
   full: {
     bloom: true,
@@ -113,6 +117,7 @@ export const presets: Record<Preset, Switches> = {
     fireworks: true,
     flames: true,
     lightCues: true,
+    cameraMoves: true,
   },
   off: {
     bloom: false,
@@ -131,6 +136,7 @@ export const presets: Record<Preset, Switches> = {
     fireworks: false,
     flames: false,
     lightCues: false,
+    cameraMoves: false,
   },
 }
 
@@ -279,6 +285,15 @@ export function useEffectsFolder() {
       },
       { order: 0.5 },
     ),
+    // Beside the pace of the glide home in the camera's own folder, where it's looked for, though
+    // the presets set it with the effects
+    Camera: folder({
+      cameraMoves: {
+        value: presets.phone.cameraMoves,
+        label: 'Camera moves',
+        hint: 'The view pulls back when you win and swings wide for the finale',
+      },
+    }),
   }))
 
   useEffect(() => {
@@ -287,7 +302,8 @@ export function useEffectsFolder() {
 
   const { look, bloom, bloomStrength, outline, antialiasing, reflection, glossy, gloss } = values
   const { rings, ringBrightness, spotlights, shadowSize, haze, hazeDensity, marquee } = values
-  const { goldShine, confetti, confettiCount, fireworks, flames, lightCues, resolution } = values
+  const { goldShine, confetti, confettiCount, fireworks, flames, lightCues, cameraMoves } = values
+  const { resolution } = values
   useEffect(() => {
     useEffects.setState({
       look: look === 'daylight' ? 'daylight' : 'studio',
@@ -311,6 +327,7 @@ export function useEffectsFolder() {
       fireworks,
       flames,
       lightCues,
+      cameraMoves,
       resolution,
     })
   }, [
@@ -335,6 +352,7 @@ export function useEffectsFolder() {
     fireworks,
     flames,
     lightCues,
+    cameraMoves,
     resolution,
   ])
 }

@@ -2,10 +2,11 @@ import { CameraControlsImpl } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { folder, useControls } from 'leva'
 import { useCallback, useEffect, useRef, type RefObject } from 'react'
-import { PerspectiveCamera, Vector3 } from 'three'
+import { MathUtils, PerspectiveCamera, Spherical, Vector3 } from 'three'
 import type { Phase } from '../game/director.ts'
 import type { LineKey } from '../game/script.ts'
 import { useGame, type Awaiting } from '../store.ts'
+import { useEffects } from './effects.ts'
 import { framedPosition, lookAt } from './useFraming.ts'
 
 const { ACTION } = CameraControlsImpl
@@ -24,6 +25,22 @@ const home = 1e-3
 // two that announce a crate about to open, so the view is home before its lid moves
 const homeLines = new Set<LineKey>(['rules', 'rulesSimple', 'hostOpens', 'open'])
 
+// Where the camera can be sent: home to the framed view, back from it while a win is celebrated,
+// or wide for the finale
+type View = 'home' | 'celebrate' | 'finale'
+
+// A win's view stands this much farther back along the framed view's line, so the confetti and
+// the flames have room around the crates, and drifts there more slowly than the glide home starts
+const pullBack = 1.3
+const pullBackGlide = 0.6
+// The finale's view looks straight up the stage from the front, tilted this far from overhead,
+// at a point above the back crate that takes in the title and the fireworks over it, from this
+// much farther back than the framed view, and swings there slowly
+const finaleTilt = MathUtils.degToRad(68)
+const finaleTarget = new Vector3(0, 1, -0.8)
+const finaleWider = 1.5
+const finaleGlide = 0.9
+
 interface Screen {
   width: number
   height: number
@@ -34,19 +51,37 @@ interface Glides {
   refit: (screen: Screen) => void
 }
 
-// The point of the show a return home belongs to, so one held off by a gesture is dropped once the
-// show has moved past it
+// The point of the show a move belongs to, so one held off by a gesture is dropped once the show
+// has moved past it
 interface Moment {
   round: number
   phase: Phase
   awaiting: Awaiting
+  view: View
+}
+
+// The move the show wants for a change of its state, if any. The returns home always; the win's
+// and the finale's moves only with the Camera moves switch on
+function viewFor(state: ReturnType<typeof useGame.getState>, previous: typeof state): View | null {
+  const awaited =
+    state.awaiting !== previous.awaiting &&
+    (state.awaiting === 'pick' || state.awaiting === 'decision')
+  const cue = state.cue !== previous.cue ? state.cue?.name : undefined
+  const said = state.line !== previous.line && !!state.line && homeLines.has(state.line.key)
+  if (awaited || said || cue === 'reveal' || cue === 'lose') return 'home'
+  if (!useEffects.getState().cameraMoves) return null
+  if (cue === 'win') return 'celebrate'
+  if (cue === 'finale') return 'finale'
+  return null
 }
 
 // Takes the camera home to the framed view whenever the show needs the stage: as the host explains
 // the rules, when a pick or a decision is awaited, as she announces a crate she or the player is
-// about to open, and at the reveal and a loss. It glides there, and the player always wins: any
-// gesture ends the glide where the camera is, and a moment that comes while a gesture is held
-// waits for its release. Returns what ends a glide for the gestures the controls don't announce
+// about to open, and at the reveal and a loss. With the Camera moves switch on, it also pulls back
+// while a win is celebrated and swings wide for the finale. Each is a glide, one at a time, and
+// the player always wins: any gesture ends the glide where the camera is, and a moment that comes
+// while a gesture is held waits for its release. Returns what ends a glide for the gestures the
+// controls don't announce
 export function useHomeView(
   controls: RefObject<CameraControlsImpl | null>,
   crates: [number, number][],
@@ -68,28 +103,61 @@ export function useHomeView(
     if (!cameraControls) return undefined
     const position = new Vector3()
     const target = new Vector3()
-    // Where the glide under way is headed, if one is
+    // Where the glide under way is headed, if one is, and the view it's headed for
     const heading = new Vector3()
+    const headingTarget = new Vector3()
+    let view: View = 'home'
     let gliding = false
     let held = false
     let waiting: Moment | null = null
+    const end = new Vector3()
+    const endTarget = new Vector3()
+    const offset = new Vector3()
+    const spherical = new Spherical()
 
-    // For the screen at its size now. A glide already headed home goes on as it is, unless the
-    // screen has changed under it
-    const goHome = (screen: Screen, refit = false) => {
+    // Where a view puts the camera and what it looks at, for a screen, into end and endTarget. Kept
+    // within the limits the player's own moves keep to, which the controls apply to a drag or a
+    // pan but not to a glide: looking down on the stage, at a point on or above the floor, within
+    // the nearest and farthest distances. Otherwise the player's next drag would jump back to them
+    const place = (to: View, screen: Screen, camera: PerspectiveCamera) => {
+      const { minDistance, maxDistance, minPolarAngle, maxPolarAngle } = cameraControls
+      const framed = framedPosition(crates, camera.fov, screen.width, screen.height, maxDistance)
+      const distance = framed.distanceTo(lookAt)
+      if (to === 'finale') {
+        endTarget.copy(finaleTarget)
+        offset.setFromSphericalCoords(distance * finaleWider, finaleTilt, 0)
+      } else {
+        endTarget.copy(lookAt)
+        offset.subVectors(framed, lookAt)
+        if (to === 'celebrate') offset.multiplyScalar(pullBack)
+      }
+      endTarget.y = Math.max(endTarget.y, 0)
+      spherical.setFromVector3(offset)
+      spherical.phi = MathUtils.clamp(spherical.phi, minPolarAngle, maxPolarAngle)
+      spherical.radius = MathUtils.clamp(spherical.radius, minDistance, maxDistance)
+      end.setFromSpherical(spherical).add(endTarget)
+    }
+
+    // For the screen at its size now. A glide already headed for the same place goes on as it is,
+    // unless the screen has changed under it
+    const glideTo = (to: View, screen: Screen, refit = false) => {
       const { camera } = get()
       if (!(camera instanceof PerspectiveCamera)) return
-      const { maxDistance } = cameraControls
-      const framed = framedPosition(crates, camera.fov, screen.width, screen.height, maxDistance)
-      if (gliding && !refit && heading.distanceTo(framed) < home) return
+      place(to, screen, camera)
+      const same = heading.distanceTo(end) < home && headingTarget.distanceTo(endTarget) < home
+      if (gliding && !refit && same) return
       cameraControls.getPosition(position, false)
       cameraControls.getTarget(target, false)
-      if (!gliding && position.distanceTo(framed) < home && target.distanceTo(lookAt) < home) return
-      heading.copy(framed)
+      const there = position.distanceTo(end) < home && target.distanceTo(endTarget) < home
+      if (!gliding && there) return
+      heading.copy(end)
+      headingTarget.copy(endTarget)
+      view = to
       gliding = true
-      cameraControls.smoothTime = panel('glide')
-      const { x, y, z } = framed
-      void cameraControls.setLookAt(x, y, z, lookAt.x, lookAt.y, lookAt.z, true)
+      cameraControls.smoothTime =
+        to === 'home' ? panel('glide') : to === 'celebrate' ? pullBackGlide : finaleGlide
+      const { x, y, z } = endTarget
+      void cameraControls.setLookAt(end.x, end.y, end.z, x, y, z, true)
       // The camera's turn is counted on past a full circle, so it would unwind every turn the
       // player made; this takes the shorter way round instead
       cameraControls.normalizeRotations()
@@ -122,32 +190,27 @@ export function useHomeView(
       if (!moment) return
       const { round, phase, awaiting } = useGame.getState()
       if (round !== moment.round || phase !== moment.phase || awaiting !== moment.awaiting) return
-      goHome(get().size)
+      glideTo(moment.view, get().size)
     }
 
     const unsubscribe = useGame.subscribe((state, previous) => {
-      const awaited =
-        state.awaiting !== previous.awaiting &&
-        (state.awaiting === 'pick' || state.awaiting === 'decision')
-      const cued =
-        state.cue !== previous.cue && (state.cue?.name === 'reveal' || state.cue?.name === 'lose')
-      const said = state.line !== previous.line && !!state.line && homeLines.has(state.line.key)
-      if (!awaited && !cued && !said) return
+      const to = viewFor(state, previous)
+      if (!to) return
       if (held || cameraControls.currentAction !== ACTION.NONE) {
-        waiting = { round: state.round, phase: state.phase, awaiting: state.awaiting }
+        waiting = { round: state.round, phase: state.phase, awaiting: state.awaiting, view: to }
         return
       }
-      goHome(get().size)
+      glideTo(to, get().size)
     })
     cameraControls.addEventListener('rest', onRest)
     cameraControls.addEventListener('controlstart', onStart)
     cameraControls.addEventListener('controlend', onEnd)
-    // A glide under way when the screen turns or resizes heads for the new screen's framed view,
+    // A glide under way when the screen turns or resizes heads for its view on the new screen,
     // since the framing has just refitted the distance along the way the camera faced mid-glide
     glides.current = {
       takeOver,
       refit: (screen) => {
-        if (gliding) goHome(screen, true)
+        if (gliding) glideTo(view, screen, true)
       },
     }
     return () => {
