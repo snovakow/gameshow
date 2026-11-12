@@ -146,6 +146,10 @@ export function Crate({ index, x, z }: { index: number; x: number; z: number }) 
       lid.current.rotation.x = openAngle * s.progress
       rise.current.position.y = s.progress * size
     }
+    // The prize is drawn only from the moment its lid starts to open until it's shut again: a wide
+    // amount is broader than the crate, and would show through its sides, in its shadow and in the
+    // floor's reflection, where the prize is before the player chooses
+    if (rise.current) rise.current.visible = s.target === 1 || s.progress > 0
     // Reported once the lid is down, so the show changes no text while a lid is open
     if (!open && !shut && s.progress === 0) useGame.getState().reportShut(index)
   })

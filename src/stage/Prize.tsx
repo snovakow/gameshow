@@ -38,7 +38,9 @@ export function Prize({ text, kind }: { text: string; kind: CrateKind }) {
     }
   }, [font, text])
 
-  // Starts inside the crate; the crate raises it as the lid opens
+  // Starts inside the crate; the crate raises it as the lid opens. Hidden meshes still take rays,
+  // so it never takes one: an amount wider than its crate would take presses on the floor beside
+  // the shut crate, and give away where the prize is
   return (
     <mesh
       ref={mesh}
@@ -47,6 +49,7 @@ export function Prize({ text, kind }: { text: string; kind: CrateKind }) {
       position-z={-depth / 2}
       castShadow
       receiveShadow
+      raycast={() => null}
     />
   )
 }
