@@ -87,6 +87,17 @@ body {
   cursor: progress;
 }
 
+/* Sound on or off, a round button at the top left below the frame-rate meter (48 px tall at the
+   page's top), clear of a notch */
+.hud .mute {
+  position: absolute;
+  top: max(56px, calc(env(safe-area-inset-top, 0px) + 8px));
+  left: var(--edge-left);
+  min-width: var(--button);
+  width: var(--button);
+  padding: 0;
+}
+
 /* The way to the gift maker, quieter than Start */
 .hud .secondary {
   border-color: rgb(255 255 255 / 45%);
@@ -184,13 +195,14 @@ body {
 }
 
 /* Landscape: the tab in the corner beside the buttons, a line for each round, its height clear of
-   the frame-rate meter, scrolling if a long show outgrows it */
+   the frame-rate meter and the mute button below it (whose foot is 104 px down), scrolling if a
+   long show outgrows it */
 @media (orientation: landscape) {
   .hud .tab {
     left: var(--edge-left);
     bottom: var(--edge-bottom);
     width: 190px;
-    max-height: calc(100% - var(--edge-bottom) - 64px);
+    max-height: calc(100% - var(--edge-bottom) - 112px);
     overflow-y: auto;
   }
 

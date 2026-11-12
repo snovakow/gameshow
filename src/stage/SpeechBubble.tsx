@@ -12,9 +12,9 @@ const position: [number, number, number] = [0, 1.9, 1]
 const zIndexRange: [number, number] = [20, 0]
 // The tail below the bubble, in CSS pixels, as index.css draws it
 const tail = 8
-// What the bubble keeps clear of: the HUD's tab and buttons, the frame-rate meter, and the panel's
-// title bar, which is all of the panel while it's folded
-const obstacles = '.hud .tab, .hud .buttons > *, .meter, .panel > div > :first-child'
+// What the bubble keeps clear of: the HUD's tab, buttons and mute button, the frame-rate meter,
+// and the panel's title bar, which is all of the panel while it's folded
+const obstacles = '.hud .tab, .hud .buttons > *, .hud .mute, .meter, .panel > div > :first-child'
 
 interface Box {
   left: number

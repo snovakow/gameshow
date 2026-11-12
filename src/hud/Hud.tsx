@@ -1,6 +1,9 @@
 import { useControls } from 'leva'
 import { useEffect } from 'react'
+import { startAudio } from '../audio/sounds.ts'
+import { useSoundCues, useSoundFolder } from '../audio/useSoundCues.ts'
 import { useGame } from '../store.ts'
+import { MuteButton } from './MuteButton.tsx'
 import { Tab } from './Tab.tsx'
 import { TitleCard } from './TitleCard.tsx'
 import { useWakeLock } from './useWakeLock.ts'
@@ -35,9 +38,10 @@ function GameFolder() {
   return null
 }
 
-// The title card, the tab and the show's buttons, drawn over the canvas and outside its events:
-// the tab a corner in landscape and a strip above the buttons in portrait, all of it clear of the
-// frame-rate meter, the panel and the screen's notch and home bar
+// The title card, the tab, the show's buttons and the mute button, drawn over the canvas and
+// outside its events: the tab a corner in landscape and a strip above the buttons in portrait, all
+// of it clear of the frame-rate meter, the panel and the screen's notch and home bar. The show's
+// sound plays from here, on its cues
 export function Hud() {
   const gift = useGame((s) => s.gift)
   const phase = useGame((s) => s.phase)
@@ -50,8 +54,13 @@ export function Hud() {
   const next = useGame((s) => s.next)
   const playAgain = useGame((s) => s.playAgain)
   const keepAwake = useWakeLock()
+  useSoundCues()
+  useSoundFolder()
 
+  // The press browsers want before a page plays sound or keeps the screen on. The sound starts
+  // first, so it is ready for the show's first cue
   const onStart = () => {
+    startAudio()
     start()
     if (useGame.getState().phase !== 'title') keepAwake()
   }
@@ -60,6 +69,7 @@ export function Hud() {
   return (
     <div className="hud">
       {!gift && <GameFolder />}
+      <MuteButton />
       {phase === 'title' ? (
         <TitleCard
           onStart={onStart}
