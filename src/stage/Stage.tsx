@@ -70,7 +70,7 @@ export function Stage() {
       />
       {/* The daylight stage is the one from before the studio, unchanged, for comparison */}
       {look === 'studio' ? (
-        <Studio />
+        <Studio crates={crates} />
       ) : (
         <>
           <Lights />

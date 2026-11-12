@@ -7,6 +7,9 @@ export type Antialiasing = 'msaa' | 'fxaa'
 // The night studio, or the sunny stage it replaced, kept for comparison
 export type Look = 'studio' | 'daylight'
 
+// The key light's shadow map, a side in texels
+export type ShadowSize = 1024 | 2048
+
 // Every switch and slider of the panel's Effects folder, which the stage and the app read here
 export interface Effects {
   look: Look
@@ -25,6 +28,12 @@ export interface Effects {
   // Rings rippling out across the studio floor, and the light that carries them onto the stage
   rings: boolean
   ringBrightness: number
+  // The spots on each crate and the two coloured ones; without them the key light alone remains
+  spotlights: boolean
+  shadowSize: ShadowSize
+  // A haze lying low over the studio floor, and how thick it is
+  haze: boolean
+  hazeDensity: number
   // The most device pixels drawn for each CSS pixel
   resolution: number
 }
@@ -37,6 +46,9 @@ type Switches = Pick<
   | 'reflection'
   | 'glossy'
   | 'rings'
+  | 'spotlights'
+  | 'shadowSize'
+  | 'haze'
 >
 
 export type Preset = 'phone' | 'full' | 'off'
@@ -52,6 +64,9 @@ export const presets: Record<Preset, Switches> = {
     reflection: true,
     glossy: false,
     rings: true,
+    spotlights: true,
+    shadowSize: 1024,
+    haze: true,
   },
   full: {
     bloom: true,
@@ -60,6 +75,9 @@ export const presets: Record<Preset, Switches> = {
     reflection: true,
     glossy: true,
     rings: true,
+    spotlights: true,
+    shadowSize: 2048,
+    haze: true,
   },
   off: {
     bloom: false,
@@ -68,12 +86,18 @@ export const presets: Record<Preset, Switches> = {
     reflection: false,
     glossy: false,
     rings: false,
+    spotlights: false,
+    shadowSize: 1024,
+    haze: false,
   },
 }
 
 const strengthSlider = { value: 1, min: 0, max: 3, step: 0.05 }
 const glossSlider = { value: 0.9, min: 0, max: 1, step: 0.05 }
 const ringSlider = { value: 1, min: 0, max: 3, step: 0.05 }
+// Thick enough at the slider's start to lift the floor's far edge, thin enough that the crates
+// standing in it keep their colour
+const hazeSlider = { value: 0.25, min: 0, max: 1, step: 0.01 }
 // A cap of 2 is as sharp as most eyes can tell on a phone, where 3 would draw more than twice the
 // pixels; below 1 draws fewer pixels than the screen has, for a slow device
 const resolutionSlider = { value: 2, min: 0.5, max: 3, step: 0.25 }
@@ -86,6 +110,7 @@ export const useEffects = create<Effects>(() => ({
   bloomStrength: strengthSlider.value,
   gloss: glossSlider.value,
   ringBrightness: ringSlider.value,
+  hazeDensity: hazeSlider.value,
   resolution: resolutionSlider.value,
 }))
 
@@ -145,6 +170,23 @@ export function useEffectsFolder() {
           hint: 'Rings of light ripple across the studio floor',
         },
         ringBrightness: { ...ringSlider, label: 'Ring glow', hint: 'How bright the rings are' },
+        spotlights: {
+          value: presets.phone.spotlights,
+          label: 'Spotlights',
+          hint: 'A spot on each crate and two coloured ones; off leaves the key light alone',
+        },
+        shadowSize: {
+          value: presets.phone.shadowSize,
+          options: { '1024': 1024, '2048': 2048 },
+          label: 'Shadow',
+          hint: "How finely the key light's shadow is drawn",
+        },
+        haze: {
+          value: presets.phone.haze,
+          label: 'Haze',
+          hint: 'A haze lying low over the studio floor',
+        },
+        hazeDensity: { ...hazeSlider, label: 'Thickness', hint: 'How thick the haze is' },
         resolution: {
           ...resolutionSlider,
           label: 'Resolution',
@@ -160,7 +202,7 @@ export function useEffectsFolder() {
   }, [set])
 
   const { look, bloom, bloomStrength, outline, antialiasing, reflection, glossy, gloss } = values
-  const { rings, ringBrightness, resolution } = values
+  const { rings, ringBrightness, spotlights, shadowSize, haze, hazeDensity, resolution } = values
   useEffect(() => {
     useEffects.setState({
       look: look === 'daylight' ? 'daylight' : 'studio',
@@ -173,6 +215,10 @@ export function useEffectsFolder() {
       gloss,
       rings,
       ringBrightness,
+      spotlights,
+      shadowSize: shadowSize === 2048 ? 2048 : 1024,
+      haze,
+      hazeDensity,
       resolution,
     })
   }, [
@@ -186,6 +232,10 @@ export function useEffectsFolder() {
     gloss,
     rings,
     ringBrightness,
+    spotlights,
+    shadowSize,
+    haze,
+    hazeDensity,
     resolution,
   ])
 }
