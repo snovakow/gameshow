@@ -74,6 +74,8 @@ You need Node.js 22.18 or later, and a browser with WebGPU or WebGL 2. Then run 
 
 To try it on a phone, run `npm run dev -- --host` instead and open the network address it prints on a phone on the same Wi-Fi. Over plain HTTP the phone renders with WebGL 2, and the screen may dim during a show, since browsers only keep it awake for a secure site.
 
+To see the stage as WebGL 2 draws it in a browser that has WebGPU, add `?webgl` to the address. The browser's console says which of the two is drawing.
+
 `npm run lint` and `npm run typecheck` check the code, and `npm test` runs the tests. `npm run build` makes a static site in `dist/`. It uses relative paths, so it works from any folder you copy it to, and `npm run preview` serves it locally.
 
 ## Credits

@@ -20,7 +20,10 @@ async function createRenderer({ canvas }: { canvas: object }) {
   if (!(canvas instanceof HTMLCanvasElement)) {
     throw new Error('Gameshow renders to an HTML canvas')
   }
-  const renderer = new WebGPURenderer({ canvas, antialias: true })
+  // ?webgl draws with the WebGL 2 fallback even where WebGPU runs, so an effect can be judged on
+  // both
+  const forceWebGL = new URLSearchParams(location.search).has('webgl')
+  const renderer = new WebGPURenderer({ canvas, antialias: true, forceWebGL })
   await renderer.init()
   const backend = 'isWebGPUBackend' in renderer.backend ? 'WebGPU' : 'its WebGL 2 fallback'
   console.info(`Rendering with ${backend}`)
