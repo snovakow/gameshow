@@ -17,11 +17,27 @@ export interface Effects {
   outline: boolean
   // MSAA smooths edges as the scene draws; FXAA smooths the finished frame instead
   antialiasing: Antialiasing
+  // The studio floor's reflection of the stage
+  reflection: boolean
+  // The reflection blurred as a glossy floor would blur it, and how glossy: 0 is a mirror
+  glossy: boolean
+  gloss: number
+  // Rings rippling out across the studio floor, and the light that carries them onto the stage
+  rings: boolean
+  ringBrightness: number
   // The most device pixels drawn for each CSS pixel
   resolution: number
 }
 
-type Switches = Pick<Effects, 'bloom' | 'outline' | 'antialiasing'>
+type Switches = Pick<
+  Effects,
+  | 'bloom'
+  | 'outline'
+  | 'antialiasing'
+  | 'reflection'
+  | 'glossy'
+  | 'rings'
+>
 
 export type Preset = 'phone' | 'full' | 'off'
 
@@ -29,12 +45,35 @@ export type Preset = 'phone' | 'full' | 'off'
 // which in daylight draws the stage exactly as it was drawn before there were effects. A preset
 // sets the switches only; the look, the sliders and the resolution stay as they are
 export const presets: Record<Preset, Switches> = {
-  phone: { bloom: true, outline: false, antialiasing: 'msaa' },
-  full: { bloom: true, outline: true, antialiasing: 'msaa' },
-  off: { bloom: false, outline: false, antialiasing: 'msaa' },
+  phone: {
+    bloom: true,
+    outline: false,
+    antialiasing: 'msaa',
+    reflection: true,
+    glossy: false,
+    rings: true,
+  },
+  full: {
+    bloom: true,
+    outline: true,
+    antialiasing: 'msaa',
+    reflection: true,
+    glossy: true,
+    rings: true,
+  },
+  off: {
+    bloom: false,
+    outline: false,
+    antialiasing: 'msaa',
+    reflection: false,
+    glossy: false,
+    rings: false,
+  },
 }
 
 const strengthSlider = { value: 1, min: 0, max: 3, step: 0.05 }
+const glossSlider = { value: 0.9, min: 0, max: 1, step: 0.05 }
+const ringSlider = { value: 1, min: 0, max: 3, step: 0.05 }
 // A cap of 2 is as sharp as most eyes can tell on a phone, where 3 would draw more than twice the
 // pixels; below 1 draws fewer pixels than the screen has, for a slow device
 const resolutionSlider = { value: 2, min: 0.5, max: 3, step: 0.25 }
@@ -45,6 +84,8 @@ export const useEffects = create<Effects>(() => ({
   look: 'studio',
   ...presets.phone,
   bloomStrength: strengthSlider.value,
+  gloss: glossSlider.value,
+  ringBrightness: ringSlider.value,
   resolution: resolutionSlider.value,
 }))
 
@@ -87,6 +128,23 @@ export function useEffectsFolder() {
           label: 'Antialiasing',
           hint: 'MSAA smooths edges as they draw; FXAA smooths the finished frame',
         },
+        reflection: {
+          value: presets.phone.reflection,
+          label: 'Reflection',
+          hint: 'The studio floor reflects the stage',
+        },
+        glossy: {
+          value: presets.phone.glossy,
+          label: 'Glossy blur',
+          hint: 'Blurs the reflection as a glossy floor would',
+        },
+        gloss: { ...glossSlider, label: 'Gloss', hint: 'How blurred the reflection is' },
+        rings: {
+          value: presets.phone.rings,
+          label: 'Rings',
+          hint: 'Rings of light ripple across the studio floor',
+        },
+        ringBrightness: { ...ringSlider, label: 'Ring glow', hint: 'How bright the rings are' },
         resolution: {
           ...resolutionSlider,
           label: 'Resolution',
@@ -101,7 +159,8 @@ export function useEffectsFolder() {
     applyPreset.current = (preset) => set(presets[preset])
   }, [set])
 
-  const { look, bloom, bloomStrength, outline, antialiasing, resolution } = values
+  const { look, bloom, bloomStrength, outline, antialiasing, reflection, glossy, gloss } = values
+  const { rings, ringBrightness, resolution } = values
   useEffect(() => {
     useEffects.setState({
       look: look === 'daylight' ? 'daylight' : 'studio',
@@ -109,7 +168,24 @@ export function useEffectsFolder() {
       bloomStrength,
       outline,
       antialiasing: antialiasing === 'fxaa' ? 'fxaa' : 'msaa',
+      reflection,
+      glossy,
+      gloss,
+      rings,
+      ringBrightness,
       resolution,
     })
-  }, [look, bloom, bloomStrength, outline, antialiasing, resolution])
+  }, [
+    look,
+    bloom,
+    bloomStrength,
+    outline,
+    antialiasing,
+    reflection,
+    glossy,
+    gloss,
+    rings,
+    ringBrightness,
+    resolution,
+  ])
 }
