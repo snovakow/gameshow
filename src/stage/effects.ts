@@ -38,6 +38,11 @@ export interface Effects {
   marquee: boolean
   // The prizes, the crates' numbers and the marquee's letters as polished metal
   goldShine: boolean
+  // Confetti bursting from the winning crate and showering down at the finale, and how many pieces
+  confetti: boolean
+  confettiCount: number
+  // Fireworks over the stage at the finale
+  fireworks: boolean
   // The most device pixels drawn for each CSS pixel
   resolution: number
 }
@@ -55,13 +60,17 @@ type Switches = Pick<
   | 'haze'
   | 'marquee'
   | 'goldShine'
+  | 'confetti'
+  | 'confettiCount'
+  | 'fireworks'
 >
 
 export type Preset = 'phone' | 'full' | 'off'
 
 // Phone is meant to run smoothly on a mid-range phone, Full is every extra, Off nothing at all,
 // which in daylight draws the stage exactly as it was drawn before there were effects. A preset
-// sets the switches only; the look, the sliders and the resolution stay as they are
+// sets the switches and the confetti's count; the look, the other sliders and the resolution stay
+// as they are
 export const presets: Record<Preset, Switches> = {
   phone: {
     bloom: true,
@@ -75,6 +84,9 @@ export const presets: Record<Preset, Switches> = {
     haze: true,
     marquee: true,
     goldShine: true,
+    confetti: true,
+    confettiCount: 3000,
+    fireworks: true,
   },
   full: {
     bloom: true,
@@ -88,6 +100,9 @@ export const presets: Record<Preset, Switches> = {
     haze: true,
     marquee: true,
     goldShine: true,
+    confetti: true,
+    confettiCount: 12000,
+    fireworks: true,
   },
   off: {
     bloom: false,
@@ -101,8 +116,15 @@ export const presets: Record<Preset, Switches> = {
     haze: false,
     marquee: false,
     goldShine: false,
+    confetti: false,
+    confettiCount: 3000,
+    fireworks: false,
   },
 }
+
+// The most pieces of confetti the slider allows, which is what the confetti makes room for once,
+// so the slider never makes it again
+export const mostConfetti = 20000
 
 const strengthSlider = { value: 1, min: 0, max: 3, step: 0.05 }
 const glossSlider = { value: 0.9, min: 0, max: 1, step: 0.05 }
@@ -113,6 +135,8 @@ const hazeSlider = { value: 0.25, min: 0, max: 1, step: 0.01 }
 // A cap of 2 is as sharp as most eyes can tell on a phone, where 3 would draw more than twice the
 // pixels; below 1 draws fewer pixels than the screen has, for a slow device
 const resolutionSlider = { value: 2, min: 0.5, max: 3, step: 0.25 }
+// A few thousand pieces fill the air over a crate; more than that only thickens it
+const confettiSlider = { min: 500, max: mostConfetti, step: 500 }
 
 // The panel starts in the studio on the Phone preset, as the store does, so the two agree from the
 // first frame
@@ -209,6 +233,22 @@ export function useEffectsFolder() {
           label: 'Gold shine',
           hint: 'The gold in the studio shines like polished metal',
         },
+        confetti: {
+          value: presets.phone.confetti,
+          label: 'Confetti',
+          hint: 'Confetti bursts from a winning crate and showers down at the finale',
+        },
+        confettiCount: {
+          ...confettiSlider,
+          value: presets.phone.confettiCount,
+          label: 'Pieces',
+          hint: 'How many pieces of confetti fly, from the next burst on',
+        },
+        fireworks: {
+          value: presets.phone.fireworks,
+          label: 'Fireworks',
+          hint: 'Fireworks burst over the stage at the finale',
+        },
         resolution: {
           ...resolutionSlider,
           label: 'Resolution',
@@ -225,7 +265,7 @@ export function useEffectsFolder() {
 
   const { look, bloom, bloomStrength, outline, antialiasing, reflection, glossy, gloss } = values
   const { rings, ringBrightness, spotlights, shadowSize, haze, hazeDensity, marquee } = values
-  const { goldShine, resolution } = values
+  const { goldShine, confetti, confettiCount, fireworks, resolution } = values
   useEffect(() => {
     useEffects.setState({
       look: look === 'daylight' ? 'daylight' : 'studio',
@@ -244,6 +284,9 @@ export function useEffectsFolder() {
       hazeDensity,
       marquee,
       goldShine,
+      confetti,
+      confettiCount,
+      fireworks,
       resolution,
     })
   }, [
@@ -263,6 +306,9 @@ export function useEffectsFolder() {
     hazeDensity,
     marquee,
     goldShine,
+    confetti,
+    confettiCount,
+    fireworks,
     resolution,
   ])
 }

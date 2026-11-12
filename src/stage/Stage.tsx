@@ -4,6 +4,7 @@ import { Box3, MathUtils, Vector3 } from 'three'
 import { Backdrop } from './Backdrop.tsx'
 import { Crate } from './Crate.tsx'
 import { useEffects, useEffectsFolder, usesPipeline } from './effects.ts'
+import { Celebrations } from './effects/Celebrations.tsx'
 import { Floor } from './Floor.tsx'
 import { Host } from './Host.tsx'
 import { Lights } from './Lights.tsx'
@@ -85,6 +86,7 @@ export function Stage() {
       <Suspense fallback={null}>
         <Host />
       </Suspense>
+      <Celebrations crates={crates} />
       <SpeechBubble />
       <Stats className="meter" />
       {/* Made afresh for each look, whose tone mapping differs: a change of tone mapping makes
