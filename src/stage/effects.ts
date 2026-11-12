@@ -53,6 +53,14 @@ export interface Effects {
   streaks: boolean
   // The picture bursting outward from the winning crate as a win is revealed
   zoomBurst: boolean
+  // A soft cone of light under each spot
+  cheapBeams: boolean
+  // Beams of light through a drifting haze, lit and shadowed by the spots, in place of the cones,
+  // with how many steps each beam is sampled in and how finely they are drawn, as a fraction of
+  // the picture's own resolution
+  lightBeams: boolean
+  beamSteps: number
+  beamResolution: number
   // The most device pixels drawn for each CSS pixel
   resolution: number
 }
@@ -78,6 +86,8 @@ type Switches = Pick<
   | 'cameraMoves'
   | 'streaks'
   | 'zoomBurst'
+  | 'cheapBeams'
+  | 'lightBeams'
 >
 
 export type Preset = 'phone' | 'full' | 'off'
@@ -107,6 +117,8 @@ export const presets: Record<Preset, Switches> = {
     cameraMoves: true,
     streaks: false,
     zoomBurst: false,
+    cheapBeams: true,
+    lightBeams: false,
   },
   full: {
     bloom: true,
@@ -128,6 +140,9 @@ export const presets: Record<Preset, Switches> = {
     cameraMoves: true,
     streaks: true,
     zoomBurst: true,
+    // The light beams take the cones' place
+    cheapBeams: false,
+    lightBeams: true,
   },
   off: {
     bloom: false,
@@ -149,6 +164,8 @@ export const presets: Record<Preset, Switches> = {
     cameraMoves: false,
     streaks: false,
     zoomBurst: false,
+    cheapBeams: false,
+    lightBeams: false,
   },
 }
 
@@ -167,6 +184,11 @@ const hazeSlider = { value: 0.25, min: 0, max: 1, step: 0.01 }
 const resolutionSlider = { value: 2, min: 0.5, max: 3, step: 0.25 }
 // A few thousand pieces fill the air over a crate; more than that only thickens it
 const confettiSlider = { min: 500, max: mostConfetti, step: 500 }
+// Twelve steps along each beam, dithered and blurred, hide their banding; fewer show it
+const beamStepsSlider = { value: 12, min: 2, max: 16, step: 1 }
+// A quarter of the picture's resolution is soft enough for a haze once it's blurred, and draws a
+// sixteenth of the pixels
+const beamResolutionSlider = { value: 0.25, min: 0.1, max: 1, step: 0.05 }
 
 // The panel starts in the studio on the Phone preset, as the store does, so the two agree from the
 // first frame
@@ -177,6 +199,8 @@ export const useEffects = create<Effects>(() => ({
   gloss: glossSlider.value,
   ringBrightness: ringSlider.value,
   hazeDensity: hazeSlider.value,
+  beamSteps: beamStepsSlider.value,
+  beamResolution: beamResolutionSlider.value,
   resolution: resolutionSlider.value,
 }))
 
@@ -187,7 +211,8 @@ export const usesPipeline = ({
   antialiasing,
   streaks,
   zoomBurst,
-}: Switches) => bloom || outline || antialiasing === 'fxaa' || streaks || zoomBurst
+  lightBeams,
+}: Switches) => bloom || outline || antialiasing === 'fxaa' || streaks || zoomBurst || lightBeams
 
 // The panel's Effects folder, kept below the stage's own folders and above the Sound folder. It
 // writes the store, so the panel shows what a preset chose and the two never disagree
@@ -304,6 +329,26 @@ export function useEffectsFolder() {
           label: 'Zoom burst',
           hint: 'The picture bursts outward from the winning crate',
         },
+        cheapBeams: {
+          value: presets.phone.cheapBeams,
+          label: 'Cheap beams',
+          hint: 'A soft cone of light under each spot',
+        },
+        lightBeams: {
+          value: presets.phone.lightBeams,
+          label: 'Light beams',
+          hint: 'Beams of light through a haze, shadowed by the stage, in place of the cones',
+        },
+        beamSteps: {
+          ...beamStepsSlider,
+          label: 'Beam steps',
+          hint: 'How many steps each beam is sampled in',
+        },
+        beamResolution: {
+          ...beamResolutionSlider,
+          label: 'Beam detail',
+          hint: "How finely the beams are drawn, against the picture's own resolution",
+        },
         resolution: {
           ...resolutionSlider,
           label: 'Resolution',
@@ -330,7 +375,7 @@ export function useEffectsFolder() {
   const { look, bloom, bloomStrength, outline, antialiasing, reflection, glossy, gloss } = values
   const { rings, ringBrightness, spotlights, shadowSize, haze, hazeDensity, marquee } = values
   const { goldShine, confetti, confettiCount, fireworks, flames, lightCues, cameraMoves } = values
-  const { streaks, zoomBurst } = values
+  const { streaks, zoomBurst, cheapBeams, lightBeams, beamSteps, beamResolution } = values
   const { resolution } = values
   useEffect(() => {
     useEffects.setState({
@@ -358,6 +403,10 @@ export function useEffectsFolder() {
       cameraMoves,
       streaks,
       zoomBurst,
+      cheapBeams,
+      lightBeams,
+      beamSteps,
+      beamResolution,
       resolution,
     })
   }, [
@@ -385,6 +434,10 @@ export function useEffectsFolder() {
     cameraMoves,
     streaks,
     zoomBurst,
+    cheapBeams,
+    lightBeams,
+    beamSteps,
+    beamResolution,
     resolution,
   ])
 }

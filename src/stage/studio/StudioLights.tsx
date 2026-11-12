@@ -4,6 +4,7 @@ import { HemisphereLight, MathUtils, SpotLight } from 'three'
 import { Fn, atan, length, sin, smoothstep, time, vec3 } from 'three/tsl'
 import type { Node } from 'three/webgpu'
 import { useEffects } from '../effects.ts'
+import { beamLayer } from '../effects/beamVolume.ts'
 import { lightRig } from './lightRig.ts'
 
 // A faint blue from above and near black from below, so what no spot reaches stays readable
@@ -12,7 +13,8 @@ const fillGround = 0x08080f
 const fillIntensity = 1.2
 
 // The key light, high in front of the host and a little to the camera's side, wide enough to take
-// in the crates around her as well. It alone casts shadows in the studio
+// in the crates around her as well. It alone casts shadows in the studio, but while the light
+// beams show the spots cast them too
 const key = {
   colour: 0xfff1dc,
   intensity: 110,
@@ -77,16 +79,27 @@ function gobo(spin: number) {
 }
 const gobos = colourSpots.map(({ spin }) => gobo(spin))
 
+// While the light beams show, every spot but the key casts a shadow too, so the crates and the
+// host cut the beams, at a size the blurred haze can't tell from finer. Its depth spans the
+// highest spot's reach to the floor and past it
+const beamShadowSize = 512
+const beamShadowNear = 0.5
+const beamShadowFar = 10
+const beamShadowBias = -0.0005
+const beamShadowNormalBias = 0.02
+
 // Where the crates stand, on x and z
 type Places = [number, number][]
 
 // The studio's lights: a faint fill and the key light always, and, with the Spotlights switch, a
-// spot on each crate and the two coloured ones. A light added or taken away recompiles the lit
-// shaders once
+// spot on each crate and the two coloured ones, which light the light beams' haze and cast
+// shadows while the beams show. A light added or taken away, or one that starts or stops casting
+// a shadow, recompiles the lit shaders once
 export function StudioLights({ crates }: { crates: Places }) {
   const get = useThree((s) => s.get)
   const spotlightsOn = useEffects((s) => s.spotlights)
   const shadowSize = useEffects((s) => s.shadowSize)
+  const beams = useEffects((s) => s.lightBeams)
 
   // Made afresh for a new size of shadow map rather than resized: the renderer would resize the
   // map in place, but a way of drawing the stage it has drawn before, such as without the render
@@ -139,7 +152,19 @@ export function StudioLights({ crates }: { crates: Places }) {
       spot.target.position.set(...target)
       spots.push(spot)
     })
-    for (const spot of spots) scene.add(spot, spot.target)
+    for (const spot of spots) {
+      // Made afresh when the beams come and go, as the key light is for its shadow's size
+      if (beams) {
+        spot.layers.enable(beamLayer)
+        spot.castShadow = true
+        spot.shadow.mapSize.set(beamShadowSize, beamShadowSize)
+        spot.shadow.camera.near = beamShadowNear
+        spot.shadow.camera.far = beamShadowFar
+        spot.shadow.bias = beamShadowBias
+        spot.shadow.normalBias = beamShadowNormalBias
+      }
+      scene.add(spot, spot.target)
+    }
     lightRig.crateSpots = spots
       .slice(0, crates.length)
       .map((light) => ({ light, rest: crateSpot.intensity }))
@@ -156,7 +181,7 @@ export function StudioLights({ crates }: { crates: Places }) {
         spot.dispose()
       }
     }
-  }, [get, crates, spotlightsOn])
+  }, [get, crates, spotlightsOn, beams])
 
   return null
 }

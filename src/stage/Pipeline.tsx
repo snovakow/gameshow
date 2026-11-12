@@ -2,6 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useLayoutEffect, useRef } from 'react'
 import {
   Color,
+  Layers,
   MirroredRepeatWrapping,
   NormalBlending,
   UnsignedByteType,
@@ -9,6 +10,7 @@ import {
 } from 'three'
 import { bloom } from 'three/addons/tsl/display/BloomNode.js'
 import { fxaa } from 'three/addons/tsl/display/FXAANode.js'
+import { gaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js'
 import { outline } from 'three/addons/tsl/display/OutlineNode.js'
 import { radialBlur } from 'three/addons/tsl/display/radialBlur.js'
 import {
@@ -28,6 +30,7 @@ import {
   renderOutput,
   rtt,
   saturate,
+  screenUV,
   smoothstep,
   time,
   uniform,
@@ -38,6 +41,7 @@ import {
 } from 'three/tsl'
 import { BlendMode, RenderPipeline, WebGPURenderer, type Node } from 'three/webgpu'
 import { useEffects } from './effects.ts'
+import { beamLayer, useBeamVolume } from './effects/beamVolume.ts'
 import { ZoomBurst, burstCentre, burstStrength } from './effects/zoomBurst.ts'
 import { useOutlined } from './outlined.ts'
 
@@ -73,6 +77,11 @@ const streakStrength = 6
 const burstSteps = 32
 const burstDecay = 0.95
 const burstExposure = 2.5
+
+// The light beams: how far the blur reaches over the beams' own pixels, smoothing the steps'
+// grain, and how bright the beams are laid over the picture
+const beamSmoothing = 0.6
+const beamBrightness = 2.5
 
 // Streaks drawn from the bloom's bright pass, after three's anamorphic example: the bright parts
 // of what shines are kept once in a texture of their own, then each pixel gathers it from either
@@ -140,8 +149,9 @@ interface Disposable {
 
 // Draws the frame in R3F's place whenever an effect needs more than the scene alone: the scene
 // once, with what each material emits beside it for the bloom and the streaks, the zoom burst
-// over it, then the bloom, the streaks, the outline and FXAA over it. It's mounted only while one
-// of them is on, so with every effect off R3F draws the frame itself, exactly as before
+// over it, the light beams in a small pass of their own, then the bloom, the streaks, the beams,
+// the outline and FXAA over it. It's mounted only while one of them is on, so with every effect
+// off R3F draws the frame itself, exactly as before
 export function Pipeline({ crates: places }: { crates: [number, number][] }) {
   const get = useThree((s) => s.get)
   const bloomOn = useEffects((s) => s.bloom)
@@ -149,6 +159,8 @@ export function Pipeline({ crates: places }: { crates: [number, number][] }) {
   const antialiasing = useEffects((s) => s.antialiasing)
   const streaksOn = useEffects((s) => s.streaks)
   const burstOn = useEffects((s) => s.zoomBurst)
+  // Whether the light beams' haze is there to draw, which their switch decides
+  const beamsShown = useBeamVolume((s) => s.material !== null)
   const pipeline = useRef<RenderPipeline | null>(null)
 
   // Made once for as long as an effect is on; the switches change only what it draws
@@ -206,6 +218,52 @@ export function Pipeline({ crates: places }: { crates: [number, number][] }) {
       frame = frame.add(streaks.rgb.mul(color(new Color(streakTint))))
     }
 
+    const beams = beamsShown ? useBeamVolume.getState().material : null
+    if (beams) {
+      // The haze stops where the stage's view has drawn something in front of it
+      beams.depthNode = scenePass.getTextureNode('depth').sample(screenUV)
+      beams.needsUpdate = true
+      const only = new Layers()
+      only.set(beamLayer)
+      // Its own small picture, of the haze alone, with nothing to test its depth against and no
+      // samples to smooth its edges, which the blur softens anyway
+      const beamPass = pass(scene, camera, { depthBuffer: false, samples: 0 })
+      beamPass.setLayers(only)
+      beamPass.setResolutionScale(useEffects.getState().beamResolution)
+      unsubscribes.push(
+        useEffects.subscribe(({ beamResolution }) => {
+          if (beamResolution !== beamPass.getResolutionScale()) {
+            beamPass.setResolutionScale(beamResolution)
+          }
+        }),
+      )
+      // The renderer draws a scene's background in every view of it, whatever its layers, which
+      // would add the studio's sky to the picture a second time, so the beams' pass draws without
+      const onBeforeRender = scene.onBeforeRender.bind(scene)
+      const onAfterRender = scene.onAfterRender.bind(scene)
+      let background = scene.backgroundNode
+      scene.onBeforeRender = (...drawing) => {
+        onBeforeRender(...drawing)
+        if (drawing[2].layers.mask !== only.mask) return
+        background = scene.backgroundNode
+        scene.backgroundNode = null
+      }
+      scene.onAfterRender = (...drawing) => {
+        onAfterRender(...drawing)
+        if (drawing[2].layers.mask !== only.mask) return
+        scene.backgroundNode = background
+      }
+      unsubscribes.push(() => {
+        scene.onBeforeRender = onBeforeRender
+        scene.onAfterRender = onAfterRender
+        beams.depthNode = null
+        beams.needsUpdate = true
+      })
+      const softened = gaussianBlur(beamPass, beamSmoothing)
+      made.push(beamPass, softened)
+      frame = frame.add(softened.rgb.mul(beamBrightness))
+    }
+
     if (outlineOn) {
       // A list of the pipeline's own, kept in step with the crates', since the outline empties the
       // list it was given when it's disposed
@@ -246,7 +304,7 @@ export function Pipeline({ crates: places }: { crates: [number, number][] }) {
       for (const unsubscribe of unsubscribes) unsubscribe()
       for (const node of made) node.dispose()
     }
-  }, [get, bloomOn, outlineOn, antialiasing, streaksOn, burstOn])
+  }, [get, bloomOn, outlineOn, antialiasing, streaksOn, burstOn, beamsShown])
 
   // A positive priority takes the frame from R3F, which then leaves drawing to this
   useFrame(() => pipeline.current?.render(), 1)
