@@ -15,7 +15,7 @@ Gameshow is a 3D game-show stage in the browser, being built toward a game of th
 | [three.js](https://threejs.org) | Rendering, lighting, shadows, the reflective floor and the animated host |
 | [React Three Fiber](https://r3f.docs.pmnd.rs) | The three.js scene, written as React components |
 | [Vite](https://vite.dev) | The dev server and the production build |
-| [WebGPU](https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API) | The GPU API three.js renders with, falling back to WebGL 2 in browsers without it |
+| [WebGPU](https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API) | The GPU API three.js's newer renderer is named for; the effects are written in that renderer's node materials and compute passes, and it draws them with WebGL 2, or with WebGPU itself when asked |
 
 Around them are drei's helpers, a leva control panel, zustand for game state, and Oxlint for linting.
 
@@ -72,11 +72,11 @@ Looking around stops a little above level, so the stage is never seen head-on an
 
 ## Running it locally
 
-You need Node.js 22.18 or later, and a browser with WebGPU or WebGL 2. Then run `npm install`, followed by `npm run dev`, and open the address it prints.
+You need Node.js 22.18 or later, and a browser with WebGL 2. Then run `npm install`, followed by `npm run dev`, and open the address it prints.
 
-To try it on a phone, run `npm run dev -- --host` instead and open the network address it prints on a phone on the same Wi-Fi. Over plain HTTP the phone renders with WebGL 2, and the screen may dim during a show, since browsers only keep it awake for a secure site.
+To try it on a phone, run `npm run dev -- --host` instead and open the network address it prints on a phone on the same Wi-Fi. The screen may dim during a show there, since browsers only keep it awake for a secure site.
 
-To see the stage as WebGL 2 draws it in a browser that has WebGPU, add `?webgl` to the address. The browser's console says which of the two is drawing.
+The stage draws with WebGL 2 on every device, since WebGPU's compute passes, which move the confetti and the fireworks, fail on some graphics cards. To try it with WebGPU instead, add `?webgpu` to the address, in a browser that has it; WebGPU needs a secure site, so a phone on the network address gets WebGL 2 either way. The browser's console says which of the two is drawing.
 
 `npm run lint` and `npm run typecheck` check the code, and `npm test` runs the tests. `npm run build` makes a static site in `dist/`. It uses relative paths, so it works from any folder you copy it to, and `npm run preview` serves it locally.
 

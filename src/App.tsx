@@ -20,12 +20,13 @@ async function createRenderer({ canvas }: { canvas: object }) {
   if (!(canvas instanceof HTMLCanvasElement)) {
     throw new Error('Gameshow renders to an HTML canvas')
   }
-  // ?webgl draws with the WebGL 2 fallback even where WebGPU runs, so an effect can be judged on
-  // both
-  const forceWebGL = new URLSearchParams(location.search).has('webgl')
+  // WebGL 2 everywhere: WebGPU's compute passes, which the confetti and the fireworks run on, fail
+  // to build on some graphics cards, and can freeze the page for most of a minute first. ?webgpu
+  // asks for WebGPU to try it, where the browser has it
+  const forceWebGL = !new URLSearchParams(location.search).has('webgpu')
   const renderer = new WebGPURenderer({ canvas, antialias: true, forceWebGL })
   await renderer.init()
-  const backend = 'isWebGPUBackend' in renderer.backend ? 'WebGPU' : 'its WebGL 2 fallback'
+  const backend = 'isWebGPUBackend' in renderer.backend ? 'WebGPU' : 'WebGL 2'
   console.info(`Rendering with ${backend}`)
   return renderer
 }
