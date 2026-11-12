@@ -14,7 +14,7 @@ import { FontLoader } from 'three/addons/loaders/FontLoader.js'
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js'
 import { useGame } from '../store.ts'
 import { useEffects } from './effects.ts'
-import { fontUrl, gold } from './materials.ts'
+import { fontUrl, useMetals } from './materials.ts'
 import { useOutlined } from './outlined.ts'
 import { Prize } from './Prize.tsx'
 import { usePressTravel } from './usePressTravel.ts'
@@ -40,6 +40,7 @@ interface Swing {
 function CrateNumber({ number }: { number: number }) {
   const font = useLoader(FontLoader, fontUrl)
   const mesh = useRef<Mesh>(null)
+  const gold = useMetals((s) => s.gold)
 
   useLayoutEffect(() => {
     const geometry = new TextGeometry(String(number), {

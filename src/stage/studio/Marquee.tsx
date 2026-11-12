@@ -1,5 +1,5 @@
 import { useLoader, useThree } from '@react-three/fiber'
-import { useLayoutEffect } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import { Color, Group, InstancedMesh, Matrix4, Mesh, SphereGeometry } from 'three'
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js'
 import { FontLoader } from 'three/addons/loaders/FontLoader.js'
@@ -18,7 +18,7 @@ import {
 import { MeshLambertNodeMaterial } from 'three/webgpu'
 import { marqueeTitle } from '../../game/marquee.ts'
 import { useGame } from '../../store.ts'
-import { fontUrl, gold } from '../materials.ts'
+import { fontUrl, useMetals } from '../materials.ts'
 import { marqueeMode, marqueeModes } from './marqueeMode.ts'
 
 // Above and behind the back crate, high enough to clear the host's head from the opening view and
@@ -109,6 +109,8 @@ export function Marquee() {
   const font = useLoader(FontLoader, fontUrl)
   const gift = useGame((s) => s.gift)
   const title = marqueeTitle(gift ? gift.config : null)
+  const gold = useMetals((s) => s.gold)
+  const lettering = useRef<Mesh | null>(null)
 
   useLayoutEffect(() => {
     const { scene } = get()
@@ -131,8 +133,9 @@ export function Marquee() {
     const { min, max } = letters.boundingBox!
     letters.translate(-(min.x + max.x) / 2, -(min.y + max.y) / 2, -letterDepth / 2)
     const scale = Math.min(1, maxWidth / (max.x - min.x))
-    const lettering = new Mesh(letters, gold)
-    lettering.scale.setScalar(scale)
+    const lettered = new Mesh(letters, useMetals.getState().gold)
+    lettered.scale.setScalar(scale)
+    lettering.current = lettered
 
     const places = bulbPlaces(
       (max.x - min.x) * scale + 2 * margin,
@@ -149,10 +152,11 @@ export function Marquee() {
     bulbs.instanceMatrix.needsUpdate = true
 
     // The sign is decoration: it takes no presses and casts no shadow
-    for (const part of [lettering, bulbs]) part.raycast = () => undefined
-    sign.add(lettering, bulbs)
+    for (const part of [lettered, bulbs]) part.raycast = () => undefined
+    sign.add(lettered, bulbs)
     scene.add(sign)
     return () => {
+      lettering.current = null
       scene.remove(sign)
       letters.dispose()
       bulb.dispose()
@@ -160,6 +164,12 @@ export function Marquee() {
       bulbs.dispose()
     }
   }, [get, font, title])
+
+  // The letters take whichever gold the stage draws with now. Declared after the sign's own effect,
+  // so it runs after it in the same commit
+  useLayoutEffect(() => {
+    if (lettering.current) lettering.current.material = gold
+  }, [gold])
 
   return null
 }

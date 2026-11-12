@@ -4,7 +4,7 @@ import type { Mesh } from 'three'
 import { FontLoader } from 'three/addons/loaders/FontLoader.js'
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js'
 import type { CrateKind } from '../game/director.ts'
-import { fontUrl, gold, grey } from './materials.ts'
+import { fontUrl, useMetals } from './materials.ts'
 
 const depth = 0.015
 // Wider text than this scales down, so a large amount still fits over its crate
@@ -13,6 +13,7 @@ const maxWidth = 1.2
 export function Prize({ text, kind }: { text: string; kind: CrateKind }) {
   const font = useLoader(FontLoader, fontUrl)
   const mesh = useRef<Mesh>(null)
+  const material = useMetals((s) => (kind === 'prize' ? s.gold : s.grey))
 
   useLayoutEffect(() => {
     const geometry = new TextGeometry(text, {
@@ -44,7 +45,7 @@ export function Prize({ text, kind }: { text: string; kind: CrateKind }) {
   return (
     <mesh
       ref={mesh}
-      material={kind === 'prize' ? gold : grey}
+      material={material}
       position-y={-0.1}
       position-z={-depth / 2}
       castShadow

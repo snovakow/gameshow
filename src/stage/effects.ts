@@ -36,6 +36,8 @@ export interface Effects {
   hazeDensity: number
   // The show's title in lights over the stage
   marquee: boolean
+  // The prizes, the crates' numbers and the marquee's letters as polished metal
+  goldShine: boolean
   // The most device pixels drawn for each CSS pixel
   resolution: number
 }
@@ -52,6 +54,7 @@ type Switches = Pick<
   | 'shadowSize'
   | 'haze'
   | 'marquee'
+  | 'goldShine'
 >
 
 export type Preset = 'phone' | 'full' | 'off'
@@ -71,6 +74,7 @@ export const presets: Record<Preset, Switches> = {
     shadowSize: 1024,
     haze: true,
     marquee: true,
+    goldShine: true,
   },
   full: {
     bloom: true,
@@ -83,6 +87,7 @@ export const presets: Record<Preset, Switches> = {
     shadowSize: 2048,
     haze: true,
     marquee: true,
+    goldShine: true,
   },
   off: {
     bloom: false,
@@ -95,6 +100,7 @@ export const presets: Record<Preset, Switches> = {
     shadowSize: 1024,
     haze: false,
     marquee: false,
+    goldShine: false,
   },
 }
 
@@ -198,6 +204,11 @@ export function useEffectsFolder() {
           label: 'Marquee',
           hint: "The show's title over the stage, ringed by chasing lights",
         },
+        goldShine: {
+          value: presets.phone.goldShine,
+          label: 'Gold shine',
+          hint: 'The gold in the studio shines like polished metal',
+        },
         resolution: {
           ...resolutionSlider,
           label: 'Resolution',
@@ -214,7 +225,7 @@ export function useEffectsFolder() {
 
   const { look, bloom, bloomStrength, outline, antialiasing, reflection, glossy, gloss } = values
   const { rings, ringBrightness, spotlights, shadowSize, haze, hazeDensity, marquee } = values
-  const { resolution } = values
+  const { goldShine, resolution } = values
   useEffect(() => {
     useEffects.setState({
       look: look === 'daylight' ? 'daylight' : 'studio',
@@ -232,6 +243,7 @@ export function useEffectsFolder() {
       haze,
       hazeDensity,
       marquee,
+      goldShine,
       resolution,
     })
   }, [
@@ -250,6 +262,7 @@ export function useEffectsFolder() {
     haze,
     hazeDensity,
     marquee,
+    goldShine,
     resolution,
   ])
 }
