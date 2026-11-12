@@ -43,6 +43,8 @@ export interface Effects {
   confettiCount: number
   // Fireworks over the stage at the finale
   fireworks: boolean
+  // Jets of flame at the stage's sides while a win is celebrated
+  flames: boolean
   // The most device pixels drawn for each CSS pixel
   resolution: number
 }
@@ -63,6 +65,7 @@ type Switches = Pick<
   | 'confetti'
   | 'confettiCount'
   | 'fireworks'
+  | 'flames'
 >
 
 export type Preset = 'phone' | 'full' | 'off'
@@ -87,6 +90,7 @@ export const presets: Record<Preset, Switches> = {
     confetti: true,
     confettiCount: 3000,
     fireworks: true,
+    flames: true,
   },
   full: {
     bloom: true,
@@ -103,6 +107,7 @@ export const presets: Record<Preset, Switches> = {
     confetti: true,
     confettiCount: 12000,
     fireworks: true,
+    flames: true,
   },
   off: {
     bloom: false,
@@ -119,6 +124,7 @@ export const presets: Record<Preset, Switches> = {
     confetti: false,
     confettiCount: 3000,
     fireworks: false,
+    flames: false,
   },
 }
 
@@ -249,6 +255,11 @@ export function useEffectsFolder() {
           label: 'Fireworks',
           hint: 'Fireworks burst over the stage at the finale',
         },
+        flames: {
+          value: presets.phone.flames,
+          label: 'Flame jets',
+          hint: "Jets of flame at the stage's sides when you win",
+        },
         resolution: {
           ...resolutionSlider,
           label: 'Resolution',
@@ -265,7 +276,7 @@ export function useEffectsFolder() {
 
   const { look, bloom, bloomStrength, outline, antialiasing, reflection, glossy, gloss } = values
   const { rings, ringBrightness, spotlights, shadowSize, haze, hazeDensity, marquee } = values
-  const { goldShine, confetti, confettiCount, fireworks, resolution } = values
+  const { goldShine, confetti, confettiCount, fireworks, flames, resolution } = values
   useEffect(() => {
     useEffects.setState({
       look: look === 'daylight' ? 'daylight' : 'studio',
@@ -287,6 +298,7 @@ export function useEffectsFolder() {
       confetti,
       confettiCount,
       fireworks,
+      flames,
       resolution,
     })
   }, [
@@ -309,6 +321,7 @@ export function useEffectsFolder() {
     confetti,
     confettiCount,
     fireworks,
+    flames,
     resolution,
   ])
 }
