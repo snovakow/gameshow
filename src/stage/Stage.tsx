@@ -9,6 +9,7 @@ import { Host } from './Host.tsx'
 import { Lights } from './Lights.tsx'
 import { Pipeline } from './Pipeline.tsx'
 import { SpeechBubble } from './SpeechBubble.tsx'
+import { Studio } from './studio/Studio.tsx'
 import { useFraming } from './useFraming.ts'
 import { touches, useGestures } from './useGestures.ts'
 import { instant, useHomeView } from './useHomeView.ts'
@@ -32,6 +33,7 @@ export function Stage() {
   useGestures(controls, takeOver)
   useEffectsFolder()
   const pipeline = useEffects(usesPipeline)
+  const look = useEffects((s) => s.look)
 
   // A pan moves the point the camera turns around, and the camera stands at or above it, so the
   // point is kept on or above the floor: a pan that meets the floor slides along it rather than
@@ -66,9 +68,16 @@ export function Stage() {
         draggingSmoothTime={instant}
         touches={touches}
       />
-      <Lights />
-      <Backdrop />
-      <Floor />
+      {/* The daylight stage is the one from before the studio, unchanged, for comparison */}
+      {look === 'studio' ? (
+        <Studio />
+      ) : (
+        <>
+          <Lights />
+          <Backdrop />
+          <Floor />
+        </>
+      )}
       {crates.map(([x, z], index) => (
         <Crate key={index} index={index} x={x} z={z} />
       ))}
@@ -78,7 +87,10 @@ export function Stage() {
       </Suspense>
       <SpeechBubble />
       <Stats className="meter" />
-      {pipeline && <Pipeline />}
+      {/* Made afresh for each look, whose tone mapping differs: a change of tone mapping makes
+          the pipeline rebuild its frame, which would set the same bloom up again beside its first
+          set of blur passes */}
+      {pipeline && <Pipeline key={look} />}
     </>
   )
 }

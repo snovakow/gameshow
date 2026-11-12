@@ -4,8 +4,12 @@ import { create } from 'zustand'
 
 export type Antialiasing = 'msaa' | 'fxaa'
 
+// The night studio, or the sunny stage it replaced, kept for comparison
+export type Look = 'studio' | 'daylight'
+
 // Every switch and slider of the panel's Effects folder, which the stage and the app read here
 export interface Effects {
+  look: Look
   // A glow around whatever emits light
   bloom: boolean
   bloomStrength: number
@@ -22,8 +26,8 @@ type Switches = Pick<Effects, 'bloom' | 'outline' | 'antialiasing'>
 export type Preset = 'phone' | 'full' | 'off'
 
 // Phone is meant to run smoothly on a mid-range phone, Full is every extra, Off nothing at all,
-// which draws the stage exactly as it was drawn before there were effects. A preset sets the
-// switches only; the sliders and the resolution stay as they are
+// which in daylight draws the stage exactly as it was drawn before there were effects. A preset
+// sets the switches only; the look, the sliders and the resolution stay as they are
 export const presets: Record<Preset, Switches> = {
   phone: { bloom: true, outline: false, antialiasing: 'msaa' },
   full: { bloom: true, outline: true, antialiasing: 'msaa' },
@@ -35,8 +39,10 @@ const strengthSlider = { value: 1, min: 0, max: 3, step: 0.05 }
 // pixels; below 1 draws fewer pixels than the screen has, for a slow device
 const resolutionSlider = { value: 2, min: 0.5, max: 3, step: 0.25 }
 
-// The panel starts on the Phone preset, as the store does, so the two agree from the first frame
+// The panel starts in the studio on the Phone preset, as the store does, so the two agree from the
+// first frame
 export const useEffects = create<Effects>(() => ({
+  look: 'studio',
   ...presets.phone,
   bloomStrength: strengthSlider.value,
   resolution: resolutionSlider.value,
@@ -62,6 +68,12 @@ export function useEffectsFolder() {
             Off: () => applyPreset.current('off'),
           },
         }),
+        look: {
+          value: 'studio',
+          options: { Studio: 'studio', Daylight: 'daylight' },
+          label: 'Look',
+          hint: 'The night studio, or the sunny stage before it',
+        },
         bloom: { value: presets.phone.bloom, label: 'Bloom', hint: 'A glow around what shines' },
         bloomStrength: { ...strengthSlider, label: 'Strength', hint: 'How bright the glow is' },
         outline: {
@@ -89,14 +101,15 @@ export function useEffectsFolder() {
     applyPreset.current = (preset) => set(presets[preset])
   }, [set])
 
-  const { bloom, bloomStrength, outline, antialiasing, resolution } = values
+  const { look, bloom, bloomStrength, outline, antialiasing, resolution } = values
   useEffect(() => {
     useEffects.setState({
+      look: look === 'daylight' ? 'daylight' : 'studio',
       bloom,
       bloomStrength,
       outline,
       antialiasing: antialiasing === 'fxaa' ? 'fxaa' : 'msaa',
       resolution,
     })
-  }, [bloom, bloomStrength, outline, antialiasing, resolution])
+  }, [look, bloom, bloomStrength, outline, antialiasing, resolution])
 }
