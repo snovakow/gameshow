@@ -3,9 +3,11 @@ import { Suspense, useEffect, useRef } from 'react'
 import { Box3, MathUtils, Vector3 } from 'three'
 import { Backdrop } from './Backdrop.tsx'
 import { Crate } from './Crate.tsx'
+import { useEffects, useEffectsFolder, usesPipeline } from './effects.ts'
 import { Floor } from './Floor.tsx'
 import { Host } from './Host.tsx'
 import { Lights } from './Lights.tsx'
+import { Pipeline } from './Pipeline.tsx'
 import { SpeechBubble } from './SpeechBubble.tsx'
 import { useFraming } from './useFraming.ts'
 import { touches, useGestures } from './useGestures.ts'
@@ -28,6 +30,8 @@ export function Stage() {
   useFraming(controls, crates)
   const takeOver = useHomeView(controls, crates)
   useGestures(controls, takeOver)
+  useEffectsFolder()
+  const pipeline = useEffects(usesPipeline)
 
   // A pan moves the point the camera turns around, and the camera stands at or above it, so the
   // point is kept on or above the floor: a pan that meets the floor slides along it rather than
@@ -74,6 +78,7 @@ export function Stage() {
       </Suspense>
       <SpeechBubble />
       <Stats className="meter" />
+      {pipeline && <Pipeline />}
     </>
   )
 }

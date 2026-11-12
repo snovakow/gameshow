@@ -1,20 +1,17 @@
 import { Canvas, type CameraProps, type Dpr } from '@react-three/fiber'
 import { Leva } from 'leva'
-import { StrictMode, useEffect, useState } from 'react'
+import { StrictMode, useEffect, useMemo, useState } from 'react'
 import { WebGPURenderer } from 'three/webgpu'
 import { Hud } from './hud/Hud.tsx'
 import { LinkMessage } from './hud/LinkMessage.tsx'
 import { Setup } from './hud/Setup.tsx'
 import type { Route } from './route.ts'
+import { useEffects } from './stage/effects.ts'
 import { Stage } from './stage/Stage.tsx'
 import { standardFov } from './stage/useFraming.ts'
 import { useGame } from './store.ts'
 
 const camera: CameraProps = { fov: standardFov, near: 0.25, far: 30, position: [1, 2, 4] }
-
-// The device's pixel ratio, capped at 2: a phone at 3 would draw more than twice the pixels for
-// a sharpness few can see
-const dpr: Dpr = [0, 2]
 
 // A phone either way up, where the open panel would cover most of the stage
 const smallScreen = '(max-width: 600px), (max-height: 500px)'
@@ -37,6 +34,9 @@ function Show({ gift }: { gift: boolean }) {
   // Read once: the panel takes its starting state at mount, and a phone that turns keeps it. A
   // gift's recipient came for the show, not the panel
   const [collapsed] = useState(() => gift || matchMedia(smallScreen).matches)
+  // The device's pixel ratio, up to the panel's Resolution cap
+  const cap = useEffects((s) => s.resolution)
+  const dpr = useMemo<Dpr>(() => [0, cap], [cap])
 
   return (
     <>

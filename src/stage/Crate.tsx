@@ -1,11 +1,21 @@
 import { useCursor } from '@react-three/drei'
 import { useFrame, useLoader, type ThreeEvent } from '@react-three/fiber'
-import { useLayoutEffect, useRef, useState } from 'react'
-import { DoubleSide, Mesh, MeshPhongMaterial, PlaneGeometry, TextureLoader, type Group } from 'three'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import {
+  Color,
+  DoubleSide,
+  Mesh,
+  MeshPhongMaterial,
+  PlaneGeometry,
+  TextureLoader,
+  type Group,
+} from 'three'
 import { FontLoader } from 'three/addons/loaders/FontLoader.js'
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js'
 import { useGame } from '../store.ts'
+import { useEffects } from './effects.ts'
 import { fontUrl, gold } from './materials.ts'
+import { useOutlined } from './outlined.ts'
 import { Prize } from './Prize.tsx'
 import { usePressTravel } from './usePressTravel.ts'
 
@@ -13,6 +23,10 @@ const size = 0.75
 const half = size / 2
 // How far the open lid swings back; the prize rises a crate's height with it
 const openAngle = -0.6 * Math.PI
+// The warm light the chosen crate's sides give off where the bloom is on, dim enough that the
+// wood still shows through it, and none otherwise
+const glowColor = new Color(0xffb000).multiplyScalar(0.15)
+const noGlow = new Color(0x000000)
 
 // The lid's swing: where it is (0 shut, 1 open), and where the current swing started
 interface Swing {
@@ -60,8 +74,16 @@ export function Crate({ index, x, z }: { index: number; x: number; z: number }) 
   )
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && clickable)
+  // With the outline on, it marks the crate under the pointer and the choice; without it, the ring
+  // marks the choice, and where the bloom is on the chosen crate glows as well
+  const outlineOn = useEffects((s) => s.outline)
+  const bloomOn = useEffects((s) => s.bloom)
+  const outlined = outlineOn && (chosen || (hovered && clickable))
+  const glowing = chosen && bloomOn && !outlineOn
+  const mark = useOutlined((s) => s.mark)
 
   const sides = useRef<Group>(null)
+  const sidesMaterial = useRef<MeshPhongMaterial | null>(null)
   const lid = useRef<Group>(null)
   const rise = useRef<Group>(null)
   const swing = useRef<Swing>({ progress: 0, from: 0, target: 0, start: 0 })
@@ -81,13 +103,29 @@ export function Crate({ index, x, z }: { index: number; x: number; z: number }) 
         object.material = material
       }
     })
+    sidesMaterial.current = material
 
     return () => {
+      sidesMaterial.current = null
       geometry.dispose()
       material.dispose()
       map.dispose()
     }
   }, [crate])
+
+  // Set in place: the renderer draws a node material copied from this one, which shares its colours
+  // rather than copying them, so a change here reaches the frame without rebuilding the material.
+  // Declared after the material's own effect, so it runs after it in the same commit
+  useLayoutEffect(() => {
+    sidesMaterial.current?.emissive.copy(glowing ? glowColor : noGlow)
+  }, [glowing])
+
+  useEffect(() => {
+    const box = sides.current
+    if (!outlined || !box) return undefined
+    mark(box, true)
+    return () => mark(box, false)
+  }, [mark, outlined])
 
   useFrame(({ clock }) => {
     const { open, shut } = useGame.getState().crates[index]
@@ -147,13 +185,13 @@ export function Crate({ index, x, z }: { index: number; x: number; z: number }) 
       <group ref={rise}>
         <Prize text={text} kind={kind} />
       </group>
-      {/* The pick, marked on the floor; unlit, so it reads the same under any light. Hidden
-          meshes still take rays, so it never takes one, and a press on the floor beside a crate
-          stays a press on the floor */}
+      {/* The pick, marked on the floor unless the outline marks it; unlit, so it reads the same
+          under any light. Hidden meshes still take rays, so it never takes one, and a press on
+          the floor beside a crate stays a press on the floor */}
       <mesh
         rotation-x={-Math.PI / 2}
         position-y={-half + 0.004}
-        visible={chosen}
+        visible={chosen && !outlineOn}
         raycast={() => null}
       >
         <ringGeometry args={[0.6, 0.68, 64]} />
