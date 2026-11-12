@@ -1,0 +1,84 @@
+{
+  "sounds": {
+    "applause": {
+      "file": "applause.m4a",
+      "category": "crowd",
+      "offset": 0.15,
+      "duration": 7.2,
+      "fadeIn": 0.15,
+      "fadeOut": 2,
+      "gain": 0.72,
+      "loop": false
+    },
+    "cheer": {
+      "file": "cheer.m4a",
+      "category": "crowd",
+      "offset": 0.08,
+      "duration": 2.8,
+      "fadeIn": 0.05,
+      "fadeOut": 0.6,
+      "gain": 0.89,
+      "loop": false
+    },
+    "bigCheer": {
+      "file": "big-cheer.m4a",
+      "category": "crowd",
+      "offset": 0.2,
+      "duration": 8.6,
+      "fadeIn": 0.1,
+      "fadeOut": 2.5,
+      "gain": 0.65,
+      "loop": false
+    },
+    "ooh": {
+      "file": "ooh.m4a",
+      "category": "crowd",
+      "offset": 0.15,
+      "duration": 2.15,
+      "fadeIn": 0.05,
+      "fadeOut": 0.5,
+      "gain": 0.54,
+      "loop": false
+    },
+    "aww": {
+      "file": "aww.m4a",
+      "category": "crowd",
+      "offset": 0.1,
+      "duration": 1.99,
+      "fadeIn": 0.02,
+      "fadeOut": 0.5,
+      "gain": 0.69,
+      "loop": false
+    },
+    "drumroll": {
+      "file": "drumroll.m4a",
+      "category": "stings",
+      "offset": 0.08,
+      "duration": 6.1,
+      "fadeIn": 0.02,
+      "fadeOut": 0.1,
+      "gain": 0.48,
+      "loop": false
+    },
+    "crash": {
+      "file": "crash.m4a",
+      "category": "stings",
+      "offset": 0.1,
+      "duration": 3.95,
+      "fadeIn": 0.005,
+      "fadeOut": 2,
+      "gain": 0.6,
+      "loop": false
+    },
+    "murmur": {
+      "file": "murmur.m4a",
+      "category": "bed",
+      "offset": 0.25,
+      "duration": 20,
+      "fadeIn": 2,
+      "fadeOut": 2,
+      "gain": 0.18,
+      "loop": true
+    }
+  }
+}
