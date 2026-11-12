@@ -4,6 +4,7 @@ import { HemisphereLight, MathUtils, SpotLight } from 'three'
 import { Fn, atan, length, sin, smoothstep, time, vec3 } from 'three/tsl'
 import type { Node } from 'three/webgpu'
 import { useEffects } from '../effects.ts'
+import { lightRig } from './lightRig.ts'
 
 // A faint blue from above and near black from below, so what no spot reaches stays readable
 const fillSky = 0x3a4680
@@ -28,7 +29,8 @@ const keyShadowFar = 12
 const keyShadowBias = -0.0004
 const keyShadowNormalBias = 0.02
 
-// A dim warm spot straight over each crate, from this high
+// A dim warm spot straight over each crate, from this high, which the show brightens on the
+// player's choice
 const crateSpot = {
   colour: 0xffe2b0,
   intensity: 9,
@@ -105,7 +107,11 @@ export function StudioLights({ crates }: { crates: Places }) {
     light.shadow.normalBias = keyShadowNormalBias
 
     scene.add(fill, light, light.target)
+    lightRig.fill = { light: fill, rest: fillIntensity }
+    lightRig.key = { light, rest: key.intensity }
     return () => {
+      lightRig.fill = null
+      lightRig.key = null
       scene.remove(fill, light, light.target)
       fill.dispose()
       light.dispose()
@@ -134,7 +140,17 @@ export function StudioLights({ crates }: { crates: Places }) {
       spots.push(spot)
     })
     for (const spot of spots) scene.add(spot, spot.target)
+    lightRig.crateSpots = spots
+      .slice(0, crates.length)
+      .map((light) => ({ light, rest: crateSpot.intensity }))
+    lightRig.colourSpots = spots.slice(crates.length).map((light) => ({
+      light,
+      rest: colourSpotIntensity,
+      aim: light.target.position.clone(),
+    }))
     return () => {
+      lightRig.crateSpots = []
+      lightRig.colourSpots = []
       for (const spot of spots) {
         scene.remove(spot, spot.target)
         spot.dispose()

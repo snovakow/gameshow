@@ -14,11 +14,13 @@ import {
 } from 'three/tsl'
 import { useEffects } from '../effects.ts'
 
-// The rings' colour near the middle of the stage and out toward its edge, uniforms so a cue can
-// change them without rebuilding a shader
+// The rings' colour near the middle of the stage and out toward its edge, as they rest
+export const restingRings = { inner: new Color(0x74ccf4), outer: new Color(0x7f00c5) } as const
+
+// The colours drawn, uniforms so a cue can change them without rebuilding a shader
 export const ringColours = {
-  inner: uniform(new Color(0x74ccf4)),
-  outer: uniform(new Color(0x7f00c5)),
+  inner: uniform(restingRings.inner.clone()),
+  outer: uniform(restingRings.outer.clone()),
 }
 
 // The panel's Ring glow, which the studio floor keeps in step with the panel

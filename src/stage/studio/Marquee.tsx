@@ -16,6 +16,7 @@ import {
   time,
 } from 'three/tsl'
 import { MeshLambertNodeMaterial } from 'three/webgpu'
+import { strobeRate } from '../../game/lightCues.ts'
 import { marqueeTitle } from '../../game/marquee.ts'
 import { useGame } from '../../store.ts'
 import { fontUrl, useMetals } from '../materials.ts'
@@ -45,9 +46,6 @@ const chaseSteps = 6
 // The race sends a light round the whole sign this many times a second, its tail this sharp
 const raceLaps = 0.8
 const raceTail = 6
-// The strobe flashes every bulb together, this many times a second: slow, as a flash across the
-// whole sign at more than a few a second is hard on some eyes
-const strobeRate = 3
 
 // Each bulb's place round a rectangle of this width and height, centred on the origin, evenly
 // spaced and in order clockwise from the top left corner, so a pattern run by index runs round it
@@ -82,14 +80,16 @@ function bulbPlaces(width: number, height: number): [number, number][] {
 function bulbBrightness(count: number) {
   const index = float(instanceIndex)
   // Each bulb's count is taken half a step on, so none falls exactly on the cutoff, where how the
-  // GPU rounds a division would decide whether it lights
+  // GPU rounds a division would decide whether it lights. The steps are taken off the count, so the
+  // chase runs clockwise, the way the race runs
   const chase = select(
-    fract(index.add(floor(time.mul(chaseSteps))).add(0.5).div(chaseEvery)).lessThan(1 / chaseEvery),
+    fract(index.sub(floor(time.mul(chaseSteps))).add(0.5).div(chaseEvery)).lessThan(1 / chaseEvery),
     float(1),
     float(unlit),
   )
   // Brightest at the head, fading behind it, dark ahead of it
   const race = mix(float(unlit), float(1), pow(fract(index.div(count).sub(time.mul(raceLaps))), raceTail))
+  // Every bulb flashing together, as slowly as the show's strobe flashes the spots
   const strobe = mix(float(unlit), float(1), step(0.5, fract(time.mul(strobeRate))))
   return select(
     marqueeMode.equal(marqueeModes.chase),

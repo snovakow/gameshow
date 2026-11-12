@@ -1,4 +1,5 @@
 import { useEffects } from '../effects.ts'
+import { LightCues } from '../effects/LightCues.tsx'
 import { GoldShine } from './GoldShine.tsx'
 import { Haze } from './Haze.tsx'
 import { Marquee } from './Marquee.tsx'
@@ -9,12 +10,13 @@ import { StudioLights } from './StudioLights.tsx'
 
 // The night studio: a dark sky, a floor that reflects the stage and fades into the night, rings of
 // light across it, spotlights, a low haze, the show's title in lights and gold that shines, each
-// of its extras switched in the panel
+// of its extras switched in the panel, and its lights answering the show's moments
 export function Studio({ crates }: { crates: [number, number][] }) {
   const rings = useEffects((s) => s.rings)
   const haze = useEffects((s) => s.haze)
   const marquee = useEffects((s) => s.marquee)
   const goldShine = useEffects((s) => s.goldShine)
+  const lightCues = useEffects((s) => s.lightCues)
   return (
     <>
       <Sky />
@@ -24,6 +26,8 @@ export function Studio({ crates }: { crates: [number, number][] }) {
       {haze && <Haze />}
       {marquee && <Marquee />}
       {goldShine && <GoldShine />}
+      {/* After the lights, so it finds them made */}
+      {lightCues && <LightCues />}
     </>
   )
 }
