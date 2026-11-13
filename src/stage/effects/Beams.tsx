@@ -214,7 +214,8 @@ export function LightBeams() {
     const box = new Mesh(geometry, material)
     box.position.set(...hazePlace)
     box.layers.set(beamLayer)
-    // The spots' shadows reach into the haze, so the crates and the host cut the beams
+    // The spots' shadows reach into the haze, so the crates cut the beams of the spots over them
+    // and the podium casts the coloured spots' shadows
     box.receiveShadow = true
     box.raycast = () => undefined
     scene.add(box)
