@@ -11,13 +11,14 @@ export const crates: [number, number][] = [
   [1.5, 0],
 ]
 
-// The round podium the host stands on behind the row. Its height lifts her feet clear of the middle
-// crate's top from the opening view. Its radius holds her feet through every clip with 0.05 to
-// spare: her dances wander, the widest taking a shoe 1.275 from her spot. Its front edge stands
-// 0.27 behind the middle crate's ring, which sets how far back she stands. The sides are the
-// polygon its round edge is drawn and framed with
+// The round podium the host stands on behind the row. Low, so she stands not far above the
+// crates, but high enough to lift her feet just clear of the middle crate's top from the opening
+// view as she stands; a dance's step toward its front can take them behind it a moment. Its radius
+// holds her feet through every clip with 0.05 to spare: her dances wander, the widest taking a
+// shoe 1.275 from her spot. Its front edge stands 0.27 behind the middle crate's ring, which sets
+// how far back she stands. The sides are the polygon its round edge is drawn and framed with
 const podiumRadius = 1.33
-export const podium = { radius: podiumRadius, height: 0.5, sides: 64 }
+export const podium = { radius: podiumRadius, height: 0.25, sides: 64 }
 const podiumFront = -0.95
 
 // Where the host stands: on the podium behind the row, or on the floor, nearer the row and framed

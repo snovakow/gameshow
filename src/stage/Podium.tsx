@@ -10,8 +10,9 @@ const shine = 40
 const band = 0.06
 const proud = 0.004
 
-// The round podium the host stands on behind the crates, high enough that her feet show above the
-// middle crate from the opening view, and wide enough to hold her feet through every dance
+// The low round podium the host stands on behind the crates, just high enough that her feet show
+// above the middle crate from the opening view as she stands, and wide enough to hold her feet
+// through every dance
 export function Podium() {
   const gold = useMetals((s) => s.gold)
   const { radius, height, sides } = podium
