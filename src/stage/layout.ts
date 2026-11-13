@@ -22,8 +22,8 @@ const podiumFront = -0.95
 
 // Where the host stands: the podium's top under her feet, at its middle
 export const hostSpot = new Vector3(0, podium.height, podiumFront - podiumRadius)
-// Her idling pose's box, measured from her model on her spot, whose hair reaches 1.67 above it.
-// The framing fits it, and the host takes presses in it in her place
+// Her idling pose's box, measured from her model on her spot, whose hair reaches 1.67 above it,
+// which the framing fits
 export const hostBox = {
   min: new Vector3(-0.3, 0, -0.18).add(hostSpot),
   max: new Vector3(0.26, 1.67, 0.27).add(hostSpot),

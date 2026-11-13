@@ -167,8 +167,6 @@ export function Crate({ index, x, z }: { index: number; x: number; z: number }) 
   return (
     <group
       position={[x, half, z]}
-      // Marks it as a crate to the host's box, which a tap may reach it through (Host.tsx)
-      userData={{ crate: index }}
       onPointerDown={onPointerDown}
       onClick={onClick}
       onPointerOver={() => setHovered(true)}
