@@ -22,11 +22,12 @@ import { useGame } from '../../store.ts'
 import { fontUrl, useMetals } from '../materials.ts'
 import { marqueeMode, marqueeModes } from './marqueeMode.ts'
 
-// Above and behind the back crate, high enough to clear the host's head from the opening view and
-// low enough to stay clear of the panel's bar at the top of a wide screen, tipped a little toward
-// the camera
-const place = [0, 1.85, -2.6] as const
+// Above and behind the host's podium, high enough to clear her head from the opening view on every
+// screen and low enough to stay clear of the panel's bar at the top of a wide screen, tipped a
+// little toward the camera, and drawn at this much of its full size, bulbs and all, to fit there
+const place = [0, 2.67, -4.38] as const
 const tilt = -0.12
+const signScale = 0.85
 // The lettering, before it scales down to fit
 const letterSize = 0.34
 const letterDepth = 0.05
@@ -117,6 +118,7 @@ export function Marquee() {
     const sign = new Group()
     sign.position.set(...place)
     sign.rotation.x = tilt
+    sign.scale.setScalar(signScale)
 
     const letters = new TextGeometry(title, {
       font,

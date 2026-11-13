@@ -35,10 +35,10 @@ type View = 'home' | 'celebrate' | 'finale'
 const pullBack = 1.3
 const pullBackGlide = 0.6
 // The finale's view looks straight up the stage from the front, tilted this far from overhead,
-// at a point above the back crate that takes in the title and the fireworks over it, from this
-// much farther back than the framed view, and swings there slowly
+// at a point between the row and the host's podium that takes in the row, her, the title and the
+// fireworks over it, from this much farther back than the framed view, and swings there slowly
 const finaleTilt = MathUtils.degToRad(68)
-const finaleTarget = new Vector3(0, 1, -0.8)
+const finaleTarget = new Vector3(0, 1.2, -1.2)
 const finaleWider = 1.5
 const finaleGlide = 0.9
 

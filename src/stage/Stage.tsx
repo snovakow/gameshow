@@ -10,6 +10,7 @@ import { Host } from './Host.tsx'
 import { crates } from './layout.ts'
 import { Lights } from './Lights.tsx'
 import { Pipeline } from './Pipeline.tsx'
+import { Podium } from './Podium.tsx'
 import { SpeechBubble } from './SpeechBubble.tsx'
 import { Studio } from './studio/Studio.tsx'
 import { useFraming } from './useFraming.ts'
@@ -75,6 +76,7 @@ export function Stage() {
       {crates.map(([x, z], index) => (
         <Crate key={index} index={index} x={x} z={z} />
       ))}
+      <Podium />
       {/* The host and her clips are large, so the rest of the stage doesn't wait for them */}
       <Suspense fallback={null}>
         <Host />

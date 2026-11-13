@@ -3,8 +3,8 @@ import { useLayoutEffect } from 'react'
 import { PointLight } from 'three'
 import { rings } from './rings.ts'
 
-// Low in front of the host, so it reaches her and the crates' faces turned toward the middle of
-// the stage; the floor, which it only grazes, carries the rings in its own material
+// Low in front of the row, so it reaches the crates' faces and the host behind them; the floor,
+// which it only grazes, carries the rings in its own material
 const position = [0, 0.3, 1.7] as const
 // The rings as a light at this strength, falling off with the square of the distance
 const strength = 20

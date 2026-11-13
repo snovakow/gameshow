@@ -34,13 +34,13 @@ const sparks = shells * sparksPerShell
 const firstShell = 0.2
 const shellInterval = 0.55
 const shellJitter = 0.3
-// Where the shells burst: over the back of the stage, between the crates and the marquee, at the
-// height of the sign, since the opening view sees little sky above it
+// Where the shells burst: over the back of the stage, behind the host and in front of the marquee,
+// at the height of the sign, since the opening view sees little sky above it
 const burstHalfWidth = 2.6
-const burstLow = 1.9
+const burstLow = 2.4
 const burstHeight = 0.6
-const burstNear = -1.8
-const burstDepth = 1.8
+const burstNear = -2.7
+const burstDepth = 1.4
 // How fast a shell's sparks fly out, and how much faster for a bigger shell
 const speedLeast = 1.8
 const speedRange = 0.6

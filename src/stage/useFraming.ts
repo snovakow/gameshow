@@ -2,7 +2,7 @@ import type { CameraControlsImpl } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { useLayoutEffect, useRef, type RefObject } from 'react'
 import { MathUtils, PerspectiveCamera, Vector3 } from 'three'
-import { bubbleAnchor, hostBox, lookAt, opening } from './layout.ts'
+import { bubbleAnchor, hostBox, hostSpot, lookAt, opening, podium } from './layout.ts'
 
 // The framing never brings the camera nearer than the opening view, so a screen as wide as a
 // desktop's keeps exactly that view
@@ -26,8 +26,9 @@ function fovFor(aspect: number) {
 
 // What the fit holds besides the crates, which are 0.75 on a side as Crate.tsx builds them: the
 // pick's ring on the floor around each, as Crate.tsx draws it, whose outer edge is the corners of
-// a 64-sided polygon 0.68 from the crate's middle; the host idling on her spot, in her box; and the
-// bubble's anchor, where SpeechBubble.tsx pins it above her spot
+// a 64-sided polygon 0.68 from the crate's middle; the host idling on her spot, in her box; her
+// podium's round edge, top and bottom; and the bubble's anchor, where SpeechBubble.tsx pins it
+// above her spot
 const crateSize = 0.75
 const ring = { radius: 0.68, sides: 64, height: 0.004 }
 // The bubble at its largest, in CSS pixels, as index.css lays it out and SpeechBubble.tsx
@@ -43,8 +44,8 @@ function corners(min: Vector3, max: Vector3) {
   return points
 }
 
-// The points that must show: every corner of each closed crate, of its ring and of the host's
-// box. The ring shows on one crate at a time, but any of them may be picked
+// The points that must show: every corner of each closed crate, of its ring, of the host's box and
+// of her podium's edge. The ring shows on one crate at a time, but any of them may be picked
 function framedPoints(crates: [number, number][]) {
   const half = crateSize / 2
   const points = crates.flatMap(([x, z]) =>
@@ -56,6 +57,12 @@ function framedPoints(crates: [number, number][]) {
       const angle = (side / sides) * 2 * Math.PI
       points.push(new Vector3(x + radius * Math.cos(angle), height, z + radius * Math.sin(angle)))
     }
+  }
+  for (let side = 0; side < podium.sides; side++) {
+    const angle = (side / podium.sides) * 2 * Math.PI
+    const x = hostSpot.x + podium.radius * Math.sin(angle)
+    const z = hostSpot.z + podium.radius * Math.cos(angle)
+    points.push(new Vector3(x, 0, z), new Vector3(x, podium.height, z))
   }
   return [...points, ...corners(hostBox.min, hostBox.max)]
 }

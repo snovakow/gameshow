@@ -12,19 +12,20 @@ const fillSky = 0x3a4680
 const fillGround = 0x08080f
 const fillIntensity = 1.2
 
-// The key light, high in front of the host and a little to the camera's side, wide enough to take
-// in the crates around her as well. It alone casts shadows in the studio, but while the light
-// beams show the spots cast them too
+// The key light, high in front of the stage and a little to the camera's side, aimed at the middle
+// of the narrowest cone round the row and the host on her podium, and wide enough to take them all
+// in with room to spare. It alone casts shadows in the studio, but while the light beams show the
+// spots cast them too
 const key = {
   colour: 0xfff1dc,
   intensity: 110,
   position: [2.2, 5, 5.5],
-  target: [0, 0.6, 0.3],
+  target: [0, 0.35, -0.8],
   angle: MathUtils.degToRad(26),
   penumbra: 0.5,
 } as const
-// The nearest and farthest a shadow is drawn from the key light, which stands about 6 units from
-// the host, so the map's depth is spent on the stage
+// The nearest and farthest a shadow is drawn from the key light, which stands about 9 units from
+// the host and 6.7 to 10.7 from every part of the stage, so the map's depth is spent on the stage
 const keyShadowNear = 2
 const keyShadowFar = 12
 // Lifts the shadow's depth test just enough that the lit surfaces don't shadow themselves

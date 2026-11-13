@@ -22,12 +22,14 @@ import {
   smoothstep,
   uint,
   uniform,
+  vec2,
   vec3,
   vec4,
   vertexStage,
 } from 'three/tsl'
 import { MeshBasicNodeMaterial, WebGPURenderer, type ComputeNode, type Node } from 'three/webgpu'
 import { mostConfetti, useEffects } from '../effects.ts'
+import { hostSpot, podium } from '../layout.ts'
 import { useCelebrationCues } from './useCelebrationCues.ts'
 
 // A piece of paper, in metres, wide enough to catch the eye on a phone across the stage
@@ -76,7 +78,8 @@ const showerSpread = 3.5
 const showerFlight = 12
 const forever = 1e9
 
-// A piece comes to rest just above the floor, each at its own height, so none flickers into it
+// A piece comes to rest just above the floor, or above the host's podium where it falls on it, each
+// at its own height, so none flickers into either
 const restLeast = 0.003
 const restRange = 0.004
 // A frame longer than this, as when the tab was hidden, moves the pieces no further, so a stall
@@ -187,8 +190,15 @@ export function Confetti({ crates }: { crates: [number, number][] }) {
         const swaying = now.mul(trait(3).mul(swayRange).add(swayLeast)).add(trait(4).mul(TWO_PI))
         const drift = vec3(sin(swaying), 0, cos(swaying.mul(0.8))).mul(sway)
         position.assign(position.add(velocity.add(drift).mul(step)))
-        If(position.y.lessThanEqual(rest), () => {
-          position.y.assign(rest)
+        // Over the podium the piece lands on its top, and one that meets its side comes to rest on
+        // the top at its edge rather than inside it
+        const overPodium = position.xz
+          .sub(vec2(hostSpot.x, hostSpot.z))
+          .length()
+          .lessThan(podium.radius)
+        const ground = select(overPodium, rest.add(podium.height), rest)
+        If(position.y.lessThanEqual(ground), () => {
+          position.y.assign(ground)
           state.x.assign(now)
         })
       })
