@@ -31,9 +31,11 @@ function fovFor(aspect: number) {
 // above her spot
 const crateSize = 0.75
 const ring = { radius: 0.68, sides: 64, height: 0.004 }
-// The bubble at its largest, in CSS pixels, as index.css lays it out and SpeechBubble.tsx
-// centres it on its anchor: 260 wide and four lines of 15 px at 1.3, each with its padding,
-// and the tail below
+// The bubble at its largest, in CSS pixels, as index.css lays it out: 260 wide and four lines of
+// 15 px at 1.3, each with its padding, and the tail below. The fit keeps room for it centred on its
+// anchor; the bubble stands higher, wholly above the anchor, and where that room runs short at the
+// top of the screen SpeechBubble.tsx moves it down from the edge rather than the camera standing
+// back, which would make the host far smaller on a wide phone
 const bubble = { width: 284, height: 94, tail: 8 }
 
 function corners(min: Vector3, max: Vector3) {

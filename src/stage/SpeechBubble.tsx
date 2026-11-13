@@ -5,12 +5,14 @@ import { Vector3, type Camera, type Object3D } from 'three'
 import { useGame } from '../store.ts'
 import { bubbleAnchor } from './layout.ts'
 
-// Above the host's spot rather than her head, which moves while she dances
+// Above the host's spot rather than her head, which moves while she dances. The bubble stands
+// wholly above it, the tail's tip on it, so it never hangs down over her head
 const position = bubbleAnchor.toArray()
 // drei's default puts the bubble above every other layer of the page; this keeps it under the
 // HUD, the panel and the frame-rate meter
 const zIndexRange: [number, number] = [20, 0]
-// The tail below the bubble, in CSS pixels, as index.css draws it
+// The tail below the bubble, in CSS pixels, as index.css draws it, from the bubble's foot to its
+// tip
 const tail = 8
 // What the bubble keeps clear of: the HUD's tab, buttons and mute button, the frame-rate meter,
 // and the panel's title bar, which is all of the panel while it's folded
@@ -184,18 +186,19 @@ export function SpeechBubble() {
     bubble.current?.classList.toggle('moved', value)
   }
 
-  // drei's placement, the anchor projected into the canvas, moved only as far as it must go to
-  // show the bubble whole: into the room, then to the nearest place in it clear of every HUD
-  // rectangle. An anchor behind the camera puts the bubble at the edge on the anchor's side. It
-  // allocates only the position it returns, a new one each frame, since drei keeps the last to
-  // compare with
+  // The bubble's centre, which drei centres it on: above the anchor projected into the canvas by
+  // half its height and the tail, so the tail's tip touches the anchor, and moved from there only
+  // as far as it must go to show the bubble whole: into the room, down from its top edge where the
+  // bubble would rise past it, then to the nearest place in it clear of every HUD rectangle. An
+  // anchor behind the camera puts the bubble at the edge on the anchor's side. It allocates only
+  // the position it returns, a new one each frame, since drei keeps the last to compare with
   const place = (group: Object3D, camera: Camera, size: { width: number; height: number }) => {
     anchor.setFromMatrixPosition(group.matrixWorld)
     seen.copy(anchor).applyMatrix4(camera.matrixWorldInverse)
     anchor.project(camera)
-    let x = ((anchor.x + 1) / 2) * size.width
-    let y = ((1 - anchor.y) / 2) * size.height
     const { width, height } = extent.current
+    let x = ((anchor.x + 1) / 2) * size.width
+    let y = ((1 - anchor.y) / 2) * size.height - height / 2 - tail
     const r = room.current
     if (!r || width === 0) {
       setMoved(false)
