@@ -18,7 +18,6 @@ import {
 } from 'three/tsl'
 import { MeshStandardNodeMaterial, type Node } from 'three/webgpu'
 import { useEffects } from '../effects.ts'
-import { ringBrightness, rings } from './rings.ts'
 
 // A near-black floor, a little blue, for the lights to pool on
 const floorColour = 0x0c0d14
@@ -67,20 +66,18 @@ function blurred(sharp: Reflection): Node<'vec3'> {
   return mix(sharp.rgb, blur.rgb, mask.mul(gloss.mul(2).min(1)))
 }
 
-// The studio's floor: dark, fading into the night, reflecting the stage, with the rings of light
-// rippling across it. Each switch rebuilds the floor's material, so what's off costs nothing
+// The studio's floor: dark, fading into the night, reflecting the stage. Each switch rebuilds the
+// floor's material, so what's off costs nothing
 export function StudioFloor() {
   const get = useThree((s) => s.get)
   const mesh = useRef<Mesh>(null)
   const reflectionOn = useEffects((s) => s.reflection)
   const glossyOn = useEffects((s) => s.glossy)
-  const ringsOn = useEffects((s) => s.rings)
 
   useEffect(
     () =>
       useEffects.subscribe((effects) => {
         gloss.value = effects.gloss
-        ringBrightness.value = effects.ringBrightness
       }),
     [],
   )
@@ -88,9 +85,7 @@ export function StudioFloor() {
   // A layout effect, so the floor has its material before the first frame draws it
   useLayoutEffect(() => {
     const { scene } = get()
-    const { gloss: glossNow, ringBrightness: ringsNow } = useEffects.getState()
-    gloss.value = glossNow
-    ringBrightness.value = ringsNow
+    gloss.value = useEffects.getState().gloss
 
     const material = new MeshStandardNodeMaterial({ roughness: floorRoughness, metalness: 0 })
     material.transparent = true
@@ -115,8 +110,8 @@ export function StudioFloor() {
     const reflected = seen.div(seen.add(1)).mul(reflectionStrength)
     // Only the reflection's brightest parts glow, so what shines still shines in the floor
     const glow = reflected.mul(smoothstep(glowFrom, glowTo, luminance(seen)))
-    // What the floor emits reaches the bloom: the rings and the reflection's brightest parts
-    material.emissiveNode = ringsOn ? rings.add(glow) : glow
+    // What the floor emits reaches the bloom: the reflection's brightest parts
+    material.emissiveNode = glow
     // The rest of the reflection joins the floor's finished colour, after its lighting, so it shows
     // the same in a spot's pool as in the dark between them, as a gloss does, and blooms nowhere
     material.outputNode = vec4(output.rgb.add(reflected.sub(glow)), output.a)
@@ -126,7 +121,7 @@ export function StudioFloor() {
       for (const cleanup of cleanups) cleanup()
       material.dispose()
     }
-  }, [get, reflectionOn, glossyOn, ringsOn])
+  }, [get, reflectionOn, glossyOn])
 
   return (
     <mesh ref={mesh} rotation-x={-Math.PI / 2} receiveShadow>

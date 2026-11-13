@@ -65,7 +65,7 @@ const pulseRate = 0.75
 const streakScale = 0.25
 const streakTaps = 80
 const streakSpacing = 2
-// Only the brightest emitters streak, the bulbs and the fireworks rather than the rings' glow
+// Only the brightest emitters streak, the bulbs and the fireworks, rather than all that glows
 const streakThreshold = 0.45
 const streakSoftness = 0.2
 // The cool blue of a widescreen lens's flare, and how bright the streaks are against the bloom

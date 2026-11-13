@@ -20,10 +20,8 @@ export type LightChange =
   | { light: 'sweep'; shape: Envelope }
   // The crates' and the coloured spots flash together, in step with the bulbs' strobe
   | { light: 'strobe'; shape: Envelope }
-  // Every light but the rings drops to this fraction of its brightness
+  // Every light drops to this fraction of its brightness
   | { light: 'dim'; level: number; shape: Envelope }
-  // The rings take on a colour and lose it again
-  | { light: 'rings'; colour: 'gold' | 'blue'; shape: Envelope }
   // The bulbs run this way for this long, then chase again; for good where it has no end
   | { light: 'bulbs'; mode: BulbMode; seconds: number }
   // Every change still showing fades away, and the bulbs chase again
@@ -63,13 +61,11 @@ export const lightCues: Record<CueName, readonly LightChange[]> = {
   win: [
     { light: 'strobe', shape: { rise: 0, hold: strobeSeconds, fall: 0 } },
     { light: 'bulbs', mode: 'strobe', seconds: strobeSeconds },
-    { light: 'rings', colour: 'gold', shape: { rise: 0.4, hold: 2.5, fall: 1.5 } },
   ],
-  // Dark for a moment, and the rings stay blue until the player moves on
+  // Dark for a moment
   lose: [
     { light: 'dim', level: 0.3, shape: dim },
     { light: 'bulbs', mode: 'dim', seconds: dim.rise + dim.hold + dim.fall },
-    { light: 'rings', colour: 'blue', shape: { rise: 1, hold: Infinity, fall: 1.2 } },
   ],
   next: [{ light: 'rest' }],
   bonus: [],

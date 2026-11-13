@@ -28,9 +28,6 @@ export interface Effects {
   // The reflection blurred as a glossy floor would blur it, and how glossy: 0 is a mirror
   glossy: boolean
   gloss: number
-  // Rings rippling out across the studio floor, and the light that carries them onto the stage
-  rings: boolean
-  ringBrightness: number
   // The spots on each crate and the two coloured ones; without them the key light alone remains
   spotlights: boolean
   shadowSize: ShadowSize
@@ -48,7 +45,7 @@ export interface Effects {
   fireworks: boolean
   // Jets of flame at the stage's sides while a win is celebrated
   flames: boolean
-  // The studio's spots, rings and bulbs answering the show's moments
+  // The studio's spots and bulbs answering the show's moments
   lightCues: boolean
   // The camera pulling back for a win and swinging wide for the finale
   cameraMoves: boolean
@@ -75,7 +72,6 @@ type Switches = Pick<
   | 'antialiasing'
   | 'reflection'
   | 'glossy'
-  | 'rings'
   | 'spotlights'
   | 'shadowSize'
   | 'haze'
@@ -106,7 +102,6 @@ export const presets: Record<Preset, Switches> = {
     antialiasing: 'msaa',
     reflection: true,
     glossy: false,
-    rings: true,
     spotlights: true,
     shadowSize: 1024,
     haze: true,
@@ -129,7 +124,6 @@ export const presets: Record<Preset, Switches> = {
     antialiasing: 'msaa',
     reflection: true,
     glossy: true,
-    rings: true,
     spotlights: true,
     shadowSize: 2048,
     haze: true,
@@ -153,7 +147,6 @@ export const presets: Record<Preset, Switches> = {
     antialiasing: 'msaa',
     reflection: false,
     glossy: false,
-    rings: false,
     spotlights: false,
     shadowSize: 1024,
     haze: false,
@@ -178,7 +171,6 @@ export const mostConfetti = 20000
 
 const strengthSlider = { value: 1, min: 0, max: 3, step: 0.05 }
 const glossSlider = { value: 0.9, min: 0, max: 1, step: 0.05 }
-const ringSlider = { value: 1, min: 0, max: 3, step: 0.05 }
 // Thick enough at the slider's start to lift the floor's far edge, thin enough that the crates
 // standing in it keep their colour
 const hazeSlider = { value: 0.25, min: 0, max: 1, step: 0.01 }
@@ -201,7 +193,6 @@ export const useEffects = create<Effects>(() => ({
   ...presets.phone,
   bloomStrength: strengthSlider.value,
   gloss: glossSlider.value,
-  ringBrightness: ringSlider.value,
   hazeDensity: hazeSlider.value,
   beamSteps: beamStepsSlider.value,
   beamResolution: beamResolutionSlider.value,
@@ -270,12 +261,6 @@ export function useEffectsFolder() {
           hint: 'Blurs the reflection as a glossy floor would',
         },
         gloss: { ...glossSlider, label: 'Gloss', hint: 'How blurred the reflection is' },
-        rings: {
-          value: presets.phone.rings,
-          label: 'Rings',
-          hint: 'Rings of light ripple across the studio floor',
-        },
-        ringBrightness: { ...ringSlider, label: 'Ring glow', hint: 'How bright the rings are' },
         spotlights: {
           value: presets.phone.spotlights,
           label: 'Spotlights',
@@ -327,7 +312,7 @@ export function useEffectsFolder() {
         lightCues: {
           value: presets.phone.lightCues,
           label: 'Light cues',
-          hint: "The spots, the rings and the title's bulbs answer the show",
+          hint: "The spots and the title's bulbs answer the show",
         },
         streaks: {
           value: presets.phone.streaks,
@@ -384,7 +369,7 @@ export function useEffectsFolder() {
 
   const { look, host, bloom, bloomStrength, outline, antialiasing, reflection, glossy } = values
   const { gloss } = values
-  const { rings, ringBrightness, spotlights, shadowSize, haze, hazeDensity, marquee } = values
+  const { spotlights, shadowSize, haze, hazeDensity, marquee } = values
   const { goldShine, confetti, confettiCount, fireworks, flames, lightCues, cameraMoves } = values
   const { streaks, zoomBurst, cheapBeams, lightBeams, beamSteps, beamResolution } = values
   const { resolution } = values
@@ -399,8 +384,6 @@ export function useEffectsFolder() {
       reflection,
       glossy,
       gloss,
-      rings,
-      ringBrightness,
       spotlights,
       shadowSize: shadowSize === 2048 ? 2048 : 1024,
       haze,
@@ -431,8 +414,6 @@ export function useEffectsFolder() {
     reflection,
     glossy,
     gloss,
-    rings,
-    ringBrightness,
     spotlights,
     shadowSize,
     haze,

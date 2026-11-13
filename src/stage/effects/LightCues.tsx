@@ -1,6 +1,5 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
-import { Color } from 'three'
 import { time } from 'three/tsl'
 import {
   envelope,
@@ -12,7 +11,6 @@ import {
 } from '../../game/lightCues.ts'
 import { lightRig } from '../studio/lightRig.ts'
 import { marqueeMode, marqueeModes } from '../studio/marqueeMode.ts'
-import { restingRings, ringColours } from '../studio/rings.ts'
 import { useCelebrationCues } from './useCelebrationCues.ts'
 
 // A change under way: when it began, how it comes and goes, how far it reaches at full, and from
@@ -79,14 +77,8 @@ function rest() {
     if (rig) rig.light.intensity = rig.rest
   }
   for (const { light, aim } of colourSpots) light.target.position.copy(aim)
-  ringColours.inner.value.copy(restingRings.inner)
-  ringColours.outer.value.copy(restingRings.outer)
   marqueeMode.value = marqueeModes.chase
 }
-
-// The rings' colours at the height of a win and a loss
-const goldRings = { inner: new Color(0xffd66b), outer: new Color(0xff8a00) }
-const blueRings = { inner: new Color(0x2f6bff), outer: new Color(0x061a6e) }
 
 // Every change the cues can have under way, and how the bulbs run until when
 interface Runs {
@@ -94,31 +86,27 @@ interface Runs {
   sweep: Running
   strobe: Running
   dim: Running
-  gold: Running
-  blue: Running
   bulbs: { mode: BulbMode; until: number }
 }
 
 // The studio's lights answering the show, each cue once, as the show's light map has it: a spot on
-// the player's crate, the bulbs racing through the drumroll, a strobe and gold rings for a win, a
-// darkness and blue rings for a loss, and the coloured spots sweeping the stage as the show opens
-// and at its finale. Each change rises, holds and falls on time, frame by frame, and switching
-// the cues off puts every light back as it was
+// the player's crate, the bulbs racing through the drumroll, a strobe for a win, a darkness for a
+// loss, and the coloured spots sweeping the stage as the show opens and at its finale. Each change
+// rises, holds and falls on time, frame by frame, and switching the cues off puts every light back
+// as it was
 export function LightCues() {
   const runs = useRef<Runs>({
     spots: [stopped(), stopped(), stopped()],
     sweep: stopped(),
     strobe: stopped(),
     dim: stopped(),
-    gold: stopped(),
-    blue: stopped(),
     bulbs: { mode: 'chase', until: Infinity },
   })
 
   useCelebrationCues({
     onCue: (name, final) => {
       const now = seconds()
-      const { spots, sweep, strobe, dim, gold, blue, bulbs } = runs.current
+      const { spots, sweep, strobe, dim, bulbs } = runs.current
       const apply = (change: LightChange) => {
         switch (change.light) {
           case 'chosenSpot':
@@ -137,16 +125,12 @@ export function LightCues() {
           case 'dim':
             begin(dim, now, change.shape, 1 - change.level)
             return
-          case 'rings':
-            begin(change.colour === 'gold' ? gold : blue, now, change.shape, 1)
-            release(change.colour === 'gold' ? blue : gold, now)
-            return
           case 'bulbs':
             bulbs.mode = change.mode
             bulbs.until = now + change.seconds
             return
           case 'rest':
-            for (const running of [...spots, sweep, strobe, dim, gold, blue]) release(running, now)
+            for (const running of [...spots, sweep, strobe, dim]) release(running, now)
             bulbs.mode = 'chase'
             bulbs.until = Infinity
         }
@@ -155,8 +139,8 @@ export function LightCues() {
     },
     // Back at the title card, whatever was showing goes at once
     onReset: () => {
-      const { spots, sweep, strobe, dim, gold, blue, bulbs } = runs.current
-      for (const running of [...spots, sweep, strobe, dim, gold, blue]) stop(running)
+      const { spots, sweep, strobe, dim, bulbs } = runs.current
+      for (const running of [...spots, sweep, strobe, dim]) stop(running)
       bulbs.mode = 'chase'
       bulbs.until = Infinity
     },
@@ -166,7 +150,7 @@ export function LightCues() {
 
   useFrame(() => {
     const now = seconds()
-    const { spots, sweep, strobe, dim, gold, blue, bulbs } = runs.current
+    const { spots, sweep, strobe, dim, bulbs } = runs.current
     const { fill, key, crateSpots, colourSpots } = lightRig
     const lit = 1 - level(dim, now)
     // In step with the bulbs, which strobe by the time the renderer last drew with
@@ -192,12 +176,6 @@ export function LightCues() {
       // The two cross the stage in opposite directions
       light.target.position.set(aim.x + (index % 2 ? -swing : swing), aim.y, aim.z)
     }
-
-    const golden = level(gold, now)
-    const blued = level(blue, now)
-    const { inner, outer } = ringColours
-    inner.value.copy(restingRings.inner).lerp(goldRings.inner, golden).lerp(blueRings.inner, blued)
-    outer.value.copy(restingRings.outer).lerp(goldRings.outer, golden).lerp(blueRings.outer, blued)
 
     if (now >= bulbs.until) {
       bulbs.mode = 'chase'
