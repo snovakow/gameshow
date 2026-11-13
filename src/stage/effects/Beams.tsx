@@ -2,6 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useLayoutEffect, useRef } from 'react'
 import {
   AdditiveBlending,
+  BackSide,
   BoxGeometry,
   Color,
   ConeGeometry,
@@ -19,17 +20,31 @@ import { bayer16 } from 'three/addons/tsl/math/Bayer.js'
 import {
   Fn,
   abs,
+  cameraNear,
+  cameraPosition,
   dot,
+  float,
+  length,
+  max,
+  min,
   mix,
+  modelNormalMatrix,
+  modelWorldMatrixInverse,
   normalView,
   positionLocal,
+  positionView,
   positionViewDirection,
+  positionWorld,
+  saturate,
   screenCoordinate,
+  select,
   smoothstep,
+  sqrt,
   texture3D,
   time,
   uniform,
   vec3,
+  vec4,
 } from 'three/tsl'
 import { MeshLambertNodeMaterial, VolumeNodeMaterial, type Node } from 'three/webgpu'
 import { useEffects } from '../effects.ts'
@@ -51,6 +66,23 @@ const coneEdge = 2
 const coneCount = 5
 const down = new Vector3(0, -1, 0)
 
+// Within this far of a cone's surface, or inside it, the camera sees the cone from within: its near
+// side would be cut by the view's near plane and, once inside, there is no near side to draw. So
+// the cone is drawn by its far side instead, shaded as its near side would be. This far is the
+// near plane's depth over the cosine of a view's corner, about 40° off its middle, and nearer
+// than any opening view stands to a cone, so the stage opens on the cones as they always were
+const insideMargin = 0.33
+// From within, the far side's glow fades out over this much of the view's depth past the near
+// plane, so the cone fades as the camera nears the side it is about to pass out through, rather
+// than being cut
+const nearFadeDepth = 0.35
+// A ray whose way into the cone lies within this of its way out passes through none of it
+const passTolerance = 0.02
+// For its first frames each cone's inside is drawn shrunk to its point, where it covers no pixel,
+// so its shader is built as the cones appear rather than when the camera first enters one, where
+// the building would hold the picture still for half a second on a slow device
+const warmUpFrames = 2
+
 // The spot drawing a cone, in the crates' order and then the coloured spots', while it's lit
 function spotFor(index: number): RigLight<SpotLight> | undefined {
   const { crateSpots, colourSpots } = lightRig
@@ -60,10 +92,63 @@ function spotFor(index: number): RigLight<SpotLight> | undefined {
 }
 
 interface Cone {
+  // The cone seen from outside, by its near side
   mesh: Mesh
+  // The same cone seen from within, by its far side and its closed end
+  within: Mesh
   // The cone's colour, its spot's own times how bright the spot is against its rest, so the cone
   // brightens, flashes and dims with it
   colour: { value: Color }
+}
+
+// How brightly the cone glows where a ray enters it, from how far down the cone that is (0 at the
+// light, 1 at its end) and how squarely the ray meets the cone's surface there
+function glowAt(along: Node<'float'>, facing: Node<'float'>) {
+  return smoothstep(0, coneFadeIn, along)
+    .mul(along.oneMinus().pow(coneFadeOut))
+    .mul(facing.pow(coneEdge))
+    .mul(coneGlow)
+}
+
+// The glow of the cone seen from within, drawn on its far side and closed end: each pixel's ray is
+// followed back to where it enters the cone, before the camera when it's outside and behind it when
+// it's inside, and shaded as the near side would be there, so the glow is the same either side of
+// the surface. In the cone's own space it is x² + z² = y², below the light at y = 0
+function withinGlow() {
+  const eye = modelWorldMatrixInverse.mul(vec4(cameraPosition, 1)).xyz
+  // From the camera at 0 to this pixel at 1
+  const ray = positionLocal.sub(eye)
+  const a = ray.x.mul(ray.x).add(ray.z.mul(ray.z)).sub(ray.y.mul(ray.y))
+  const halfB = eye.x.mul(ray.x).add(eye.z.mul(ray.z)).sub(eye.y.mul(ray.y))
+  const c = eye.x.mul(eye.x).add(eye.z.mul(eye.z)).sub(eye.y.mul(eye.y))
+  const root = sqrt(max(halfB.mul(halfB).sub(a.mul(c)), 0))
+  // A ray along the cone's own slope meets it once; nudged off it, it meets it twice, far off
+  const safeA = a.add(select(a.lessThan(0), float(-1e-6), float(1e-6)))
+  const first = halfB.negate().sub(root).div(safeA)
+  const second = halfB.negate().add(root).div(safeA)
+  const near = min(first, second)
+  const far = max(first, second)
+  // Below the light, on the cone itself rather than its mirror above the light
+  const onCone = (at: Node<'float'>) => eye.y.add(ray.y.mul(at)).lessThanEqual(0)
+  const entry = select(onCone(near), near, far)
+  const span = length(positionWorld.sub(cameraPosition))
+  // A ray that meets the cone only where it leaves came in through its open end, where nothing
+  // is drawn from outside either
+  const enters = onCone(entry).and(entry.oneMinus().mul(span).greaterThan(passTolerance))
+  const point = eye.add(ray.mul(entry))
+  const along = saturate(point.y.negate())
+  // The surface's outward normal there, in the stage's space, to meet the ray as the near side does
+  const normal = modelNormalMatrix.mul(vec3(point.x, along, point.z)).normalize()
+  const facing = abs(dot(normal, positionWorld.sub(cameraPosition).normalize()))
+  const nearFade = smoothstep(cameraNear, cameraNear.add(nearFadeDepth), positionView.z.negate())
+  return select(enters, glowAt(along, facing).mul(nearFade), float(0))
+}
+
+// Stands a cone at its spot, pointing the way it shines, as wide and as long as its light reaches
+function fitCone(cone: Mesh, light: SpotLight, toward: Vector3, radius: number, reach: number) {
+  cone.position.copy(light.position)
+  cone.quaternion.setFromUnitVectors(down, toward)
+  cone.scale.set(radius, reach, radius)
 }
 
 // The cheap beams: a soft cone of light under each spot, drawn in one pass with the stage, unlit
@@ -73,69 +158,106 @@ export function CheapBeams() {
   const get = useThree((s) => s.get)
   const cones = useRef<Cone[]>([])
   const aim = useRef(new Vector3())
+  const fromLight = useRef(new Vector3())
+  const framesDrawn = useRef(0)
 
   useLayoutEffect(() => {
     const { scene } = get()
     // A cone with its point at the light and its open end a unit below, scaled to each spot's reach
     const geometry = new ConeGeometry(1, 1, coneSides, 1, true)
     geometry.translate(0, -0.5, 0)
+    // From within, the closed end is drawn too, for the rays that leave through it
+    const closed = new ConeGeometry(1, 1, coneSides, 1, false)
+    closed.translate(0, -0.5, 0)
     // From 0 at the light to 1 at the floor
     const along = positionLocal.y.negate()
     const facing = abs(dot(normalView, positionViewDirection))
     // Only the near side is drawn, which covers the cone's whole outline once: the far side would
     // double the pixels the cone costs for a little more brightness, which the glow gives instead
-    const fade = smoothstep(0, coneFadeIn, along)
-      .mul(along.oneMinus().pow(coneFadeOut))
-      .mul(facing.pow(coneEdge))
-      .mul(coneGlow)
-    const made: Cone[] = []
-    for (let index = 0; index < coneCount; index++) {
-      const colour = uniform(new Color())
-      // Black and unlit but for what it gives off, through which the haze and the fog don't draw
+    const fade = glowAt(along, facing)
+    const fadeWithin = withinGlow()
+    // Black and unlit but for what it gives off, through which the haze and the fog don't draw
+    const glowing = (colour: Node<'color'>, opacity: Node<'float'>, within: boolean) => {
       const material = new MeshLambertNodeMaterial({
         color: 0x000000,
         transparent: true,
         depthWrite: false,
         blending: AdditiveBlending,
-        side: FrontSide,
+        side: within ? BackSide : FrontSide,
+        // From within, whatever stands in the cone is inside it, as the crate under its spot is,
+        // and from outside the cone's near side draws over it, so from within nothing hides the
+        // glow
+        depthTest: !within,
       })
       material.lights = false
       material.fog = false
       material.emissiveNode = colour
-      material.opacityNode = fade
-      const mesh = new Mesh(geometry, material)
-      // Light, not a thing: it takes no presses and casts no shadow
-      mesh.raycast = () => undefined
-      mesh.visible = false
-      scene.add(mesh)
-      made.push({ mesh, colour })
+      material.opacityNode = opacity
+      return material
+    }
+    const made: Cone[] = []
+    for (let index = 0; index < coneCount; index++) {
+      const colour = uniform(new Color())
+      const mesh = new Mesh(geometry, glowing(colour, fade, false))
+      const within = new Mesh(closed, glowing(colour, fadeWithin, true))
+      // Drawn only with the camera in it or beside it, and shrunk to its point while warming up,
+      // where the light may stand out of view, so it is never left out for being out of view
+      within.frustumCulled = false
+      for (const cone of [mesh, within]) {
+        // Light, not a thing: it takes no presses and casts no shadow
+        cone.raycast = () => undefined
+        cone.visible = false
+        scene.add(cone)
+      }
+      made.push({ mesh, within, colour })
     }
     cones.current = made
+    framesDrawn.current = 0
     return () => {
       cones.current = []
-      for (const { mesh } of made) {
-        scene.remove(mesh)
-        if (mesh.material instanceof MeshLambertNodeMaterial) mesh.material.dispose()
+      for (const { mesh, within } of made) {
+        for (const cone of [mesh, within]) {
+          scene.remove(cone)
+          if (cone.material instanceof MeshLambertNodeMaterial) cone.material.dispose()
+        }
       }
       geometry.dispose()
+      closed.dispose()
     }
   }, [get])
 
-  useFrame(() => {
+  useFrame(({ camera }) => {
     const toward = aim.current
+    const eye = fromLight.current
     const shown = cones.current
+    const warming = framesDrawn.current < warmUpFrames
+    framesDrawn.current++
     for (let index = 0; index < shown.length; index++) {
-      const { mesh, colour } = shown[index]
+      const { mesh, within, colour } = shown[index]
       const spot = spotFor(index)
-      mesh.visible = spot !== undefined
-      if (!spot) continue
+      if (!spot) {
+        mesh.visible = false
+        within.visible = false
+        continue
+      }
       const { light, rest } = spot
       toward.subVectors(light.target.position, light.position)
       const reach = toward.length()
       const radius = reach * Math.tan(light.angle)
-      mesh.position.copy(light.position)
-      mesh.quaternion.setFromUnitVectors(down, toward.divideScalar(reach))
-      mesh.scale.set(radius, reach, radius)
+      toward.divideScalar(reach)
+      // How far the camera is outside the cone's surface, along its slope, and how far down the
+      // cone it stands
+      eye.subVectors(camera.position, light.position)
+      const depth = eye.dot(toward)
+      const across = eye.addScaledVector(toward, -depth).length()
+      const outside = across * Math.cos(light.angle) - depth * Math.sin(light.angle)
+      const fromWithin =
+        outside < insideMargin && depth > -insideMargin && depth < reach + insideMargin
+      fitCone(mesh, light, toward, radius, reach)
+      fitCone(within, light, toward, radius, reach)
+      mesh.visible = !fromWithin
+      within.visible = fromWithin || warming
+      if (warming && !fromWithin) within.scale.setScalar(0)
       colour.value.copy(light.color).multiplyScalar(light.intensity / rest)
     }
   })
