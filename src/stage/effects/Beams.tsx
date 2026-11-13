@@ -215,7 +215,7 @@ export function LightBeams() {
     box.position.set(...hazePlace)
     box.layers.set(beamLayer)
     // The spots' shadows reach into the haze, so the crates cut the beams of the spots over them
-    // and the podium casts the coloured spots' shadows
+    // and the podium, or the host standing on the floor, casts the coloured spots' shadows
     box.receiveShadow = true
     box.raycast = () => undefined
     scene.add(box)

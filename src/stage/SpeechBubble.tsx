@@ -3,11 +3,9 @@ import { useThree } from '@react-three/fiber'
 import { useEffect, useRef, type SyntheticEvent } from 'react'
 import { Vector3, type Camera, type Object3D } from 'three'
 import { useGame } from '../store.ts'
-import { bubbleAnchor } from './layout.ts'
+import { useEffects } from './effects.ts'
+import { places } from './layout.ts'
 
-// Above the host's spot rather than her head, which moves while she dances. The bubble stands
-// wholly above it, the tail's tip on it, so it never hangs down over her head
-const position = bubbleAnchor.toArray()
 // drei's default puts the bubble above every other layer of the page; this keeps it under the
 // HUD, the panel and the frame-rate meter
 const zIndexRange: [number, number] = [20, 0]
@@ -92,6 +90,7 @@ export function SpeechBubble() {
   const line = useGame((s) => s.line)
   const skipLine = useGame((s) => s.skipLine)
   const gl = useThree((s) => s.gl)
+  const host = useEffects((s) => s.host)
 
   const bubble = useRef<HTMLDivElement | null>(null)
   const sizes = useRef<ResizeObserver | null>(null)
@@ -268,7 +267,9 @@ export function SpeechBubble() {
   return (
     <Html
       center
-      position={position}
+      // Above the host's spot rather than her head, which moves while she dances. The bubble stands
+      // wholly above it, the tail's tip on it, so it never hangs down over her head
+      position={places[host].bubbleAnchor}
       zIndexRange={zIndexRange}
       calculatePosition={place}
       onOcclude={keepShown}

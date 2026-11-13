@@ -19,15 +19,14 @@ import { MeshLambertNodeMaterial } from 'three/webgpu'
 import { strobeRate } from '../../game/lightCues.ts'
 import { marqueeTitle } from '../../game/marquee.ts'
 import { useGame } from '../../store.ts'
+import { useEffects } from '../effects.ts'
+import { places, type HostMode } from '../layout.ts'
 import { fontUrl, useMetals } from '../materials.ts'
 import { marqueeMode, marqueeModes } from './marqueeMode.ts'
 
-// Above and behind the host's podium, high enough to clear her head from the opening view on every
-// screen and low enough to stay clear of the panel's bar at the top of a wide screen, tipped a
-// little toward the camera, and drawn at this much of its full size, bulbs and all, to fit there
-const place = [0, 2.67, -4.38] as const
+// Above and behind the host, where her place puts it and at the size it gives, bulbs and all
+// (layout.ts), tipped a little toward the camera
 const tilt = -0.12
-const signScale = 0.85
 // The lettering, before it scales down to fit
 const letterSize = 0.34
 const letterDepth = 0.05
@@ -53,27 +52,27 @@ const raceTail = 6
 function bulbPlaces(width: number, height: number): [number, number][] {
   const perimeter = 2 * (width + height)
   const count = Math.round(perimeter / spacing)
-  const places: [number, number][] = []
+  const spots: [number, number][] = []
   for (let i = 0; i < count; i++) {
     let along = (i / count) * perimeter
     if (along < width) {
-      places.push([-width / 2 + along, height / 2])
+      spots.push([-width / 2 + along, height / 2])
       continue
     }
     along -= width
     if (along < height) {
-      places.push([width / 2, height / 2 - along])
+      spots.push([width / 2, height / 2 - along])
       continue
     }
     along -= height
     if (along < width) {
-      places.push([width / 2 - along, -height / 2])
+      spots.push([width / 2 - along, -height / 2])
       continue
     }
     along -= width
-    places.push([-width / 2, -height / 2 + along])
+    spots.push([-width / 2, -height / 2 + along])
   }
-  return places
+  return spots
 }
 
 // How bright each bulb is, from its place in the ring and the time alone, so every frame's work is
@@ -103,6 +102,12 @@ function bulbBrightness(count: number) {
   )
 }
 
+function placeSign(sign: Group, host: HostMode) {
+  const { place, scale } = places[host].marquee
+  sign.position.copy(place)
+  sign.scale.setScalar(scale)
+}
+
 // The show's title in gold letters over the stage, ringed by chasing bulbs: GAMESHOW in the demo,
 // the greeting on a gift. The bulbs shine, so the bloom lights them
 export function Marquee() {
@@ -111,14 +116,16 @@ export function Marquee() {
   const gift = useGame((s) => s.gift)
   const title = marqueeTitle(gift ? gift.config : null)
   const gold = useMetals((s) => s.gold)
+  const host = useEffects((s) => s.host)
   const lettering = useRef<Mesh | null>(null)
+  const signRef = useRef<Group | null>(null)
 
   useLayoutEffect(() => {
     const { scene } = get()
     const sign = new Group()
-    sign.position.set(...place)
+    placeSign(sign, useEffects.getState().host)
     sign.rotation.x = tilt
-    sign.scale.setScalar(signScale)
+    signRef.current = sign
 
     const letters = new TextGeometry(title, {
       font,
@@ -139,7 +146,7 @@ export function Marquee() {
     lettered.scale.setScalar(scale)
     lettering.current = lettered
 
-    const places = bulbPlaces(
+    const spots = bulbPlaces(
       (max.x - min.x) * scale + 2 * margin,
       (max.y - min.y) * scale + 2 * margin,
     )
@@ -147,10 +154,10 @@ export function Marquee() {
     // Black and unlit but for what it gives off, which reaches the bloom as well as the frame
     const glass = new MeshLambertNodeMaterial({ color: 0x000000 })
     glass.lights = false
-    glass.emissiveNode = color(bulbColour).mul(bulbBrightness(places.length))
-    const bulbs = new InstancedMesh(bulb, glass, places.length)
+    glass.emissiveNode = color(bulbColour).mul(bulbBrightness(spots.length))
+    const bulbs = new InstancedMesh(bulb, glass, spots.length)
     const matrix = new Matrix4()
-    places.forEach(([x, y], i) => bulbs.setMatrixAt(i, matrix.makeTranslation(x, y, 0)))
+    spots.forEach(([x, y], i) => bulbs.setMatrixAt(i, matrix.makeTranslation(x, y, 0)))
     bulbs.instanceMatrix.needsUpdate = true
 
     // The sign is decoration: it takes no presses and casts no shadow
@@ -159,6 +166,7 @@ export function Marquee() {
     scene.add(sign)
     return () => {
       lettering.current = null
+      signRef.current = null
       scene.remove(sign)
       letters.dispose()
       bulb.dispose()
@@ -172,6 +180,11 @@ export function Marquee() {
   useLayoutEffect(() => {
     if (lettering.current) lettering.current.material = gold
   }, [gold])
+
+  // And moves with the host when she changes place
+  useLayoutEffect(() => {
+    if (signRef.current) placeSign(signRef.current, host)
+  }, [host])
 
   return null
 }

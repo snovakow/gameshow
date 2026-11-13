@@ -2,11 +2,9 @@ import type { CameraControlsImpl } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { useLayoutEffect, useRef, type RefObject } from 'react'
 import { MathUtils, PerspectiveCamera, Vector3 } from 'three'
-import { bubbleAnchor, hostBox, hostSpot, lookAt, opening, podium } from './layout.ts'
+import { useEffects } from './effects.ts'
+import { places, podium, type Places } from './layout.ts'
 
-// The framing never brings the camera nearer than the opening view, so a screen as wide as a
-// desktop's keeps exactly that view
-const nearest = opening.distanceTo(lookAt)
 // Everything framed stays within 95% of the view's half-width and half-height from its middle
 const reach = 0.95
 
@@ -27,8 +25,8 @@ function fovFor(aspect: number) {
 // What the fit holds besides the crates, which are 0.75 on a side as Crate.tsx builds them: the
 // pick's ring on the floor around each, as Crate.tsx draws it, whose outer edge is the corners of
 // a 64-sided polygon 0.68 from the crate's middle; the host idling on her spot, in her box; her
-// podium's round edge, top and bottom; and the bubble's anchor, where SpeechBubble.tsx pins it
-// above her spot
+// podium's round edge, top and bottom, where she stands on it; and the bubble's anchor, where
+// SpeechBubble.tsx pins it above her spot
 const crateSize = 0.75
 const ring = { radius: 0.68, sides: 64, height: 0.004 }
 // The bubble at its largest, in CSS pixels, as index.css lays it out: 260 wide and four lines of
@@ -48,7 +46,8 @@ function corners(min: Vector3, max: Vector3) {
 
 // The points that must show: every corner of each closed crate, of its ring, of the host's box and
 // of her podium's edge. The ring shows on one crate at a time, but any of them may be picked
-function framedPoints(crates: [number, number][]) {
+function framedPoints(crates: [number, number][], stage: Places) {
+  const { hostSpot, hostBox } = stage
   const half = crateSize / 2
   const points = crates.flatMap(([x, z]) =>
     corners(new Vector3(x - half, 0, z - half), new Vector3(x + half, crateSize, z + half)),
@@ -60,7 +59,7 @@ function framedPoints(crates: [number, number][]) {
       points.push(new Vector3(x + radius * Math.cos(angle), height, z + radius * Math.sin(angle)))
     }
   }
-  for (let side = 0; side < podium.sides; side++) {
+  for (let side = 0; stage.onPodium && side < podium.sides; side++) {
     const angle = (side / podium.sides) * 2 * Math.PI
     const x = hostSpot.x + podium.radius * Math.sin(angle)
     const z = hostSpot.z + podium.radius * Math.cos(angle)
@@ -89,6 +88,7 @@ function fitDistance(
   fov: number,
   width: number,
   height: number,
+  bubbleAnchor: Vector3,
 ) {
   // The camera's axes, as its lookAt builds them with the world's up
   const right = new Vector3(0, 1, 0).cross(direction).normalize()
@@ -126,24 +126,29 @@ function fitDistance(
   )
 }
 
-// The framed view's camera position for a screen: from the stage's middle along its opening line
-// of sight, at the distance that fits it, which the show goes back to when it needs the stage
+// The framed view's camera position for a screen and a place of the host's: from the stage's
+// middle along its opening line of sight, at the distance that fits it, which the show goes back
+// to when it needs the stage
 export function framedPosition(
   crates: [number, number][],
   fov: number,
   width: number,
   height: number,
   farthest: number,
+  stage: Places,
 ) {
+  const { opening, lookAt, nearest, bubbleAnchor } = stage
   const direction = opening.clone().sub(lookAt).normalize()
-  const fitted = fitDistance(framedPoints(crates), lookAt, direction, fov, width, height)
+  const points = framedPoints(crates, stage)
+  const fitted = fitDistance(points, lookAt, direction, fov, width, height, bubbleAnchor)
   return direction.multiplyScalar(MathUtils.clamp(fitted, nearest, farthest)).add(lookAt)
 }
 
 // Fits the stage to the screen: the closed crates with their rings, the host and her bubble, with
 // a margin, through a lens widened on a screen held upright. At the opening it looks along the
 // stage's opening line of sight; after a resize or a turn of the phone it keeps the direction the
-// player has turned to and refits only the distance
+// player has turned to and refits only the distance. A change of the host's place is not a refit:
+// the view glides home to that place's framed view instead (useHomeView)
 export function useFraming(
   controls: RefObject<CameraControlsImpl | null>,
   crates: [number, number][],
@@ -165,8 +170,12 @@ export function useFraming(
       camera.fov = fov
       camera.updateProjectionMatrix()
     }
+    // Read rather than watched, so only the screen's changes refit here
+    const stage = places[useEffects.getState().host]
+    const { maxDistance } = cameraControls
     if (!opened.current) {
-      const position = framedPosition(crates, camera.fov, width, height, cameraControls.maxDistance)
+      const { lookAt } = stage
+      const position = framedPosition(crates, camera.fov, width, height, maxDistance, stage)
       void cameraControls.setLookAt(
         position.x,
         position.y,
@@ -181,7 +190,9 @@ export function useFraming(
     }
     const centre = cameraControls.getTarget(new Vector3())
     const direction = cameraControls.getPosition(new Vector3()).sub(centre).normalize()
-    const fitted = fitDistance(framedPoints(crates), centre, direction, camera.fov, width, height)
-    void cameraControls.dollyTo(MathUtils.clamp(fitted, nearest, cameraControls.maxDistance), false)
+    const points = framedPoints(crates, stage)
+    const { bubbleAnchor } = stage
+    const fitted = fitDistance(points, centre, direction, fov, width, height, bubbleAnchor)
+    void cameraControls.dollyTo(MathUtils.clamp(fitted, stage.nearest, maxDistance), false)
   }, [controls, crates, get, width, height])
 }

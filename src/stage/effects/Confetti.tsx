@@ -29,7 +29,7 @@ import {
 } from 'three/tsl'
 import { MeshBasicNodeMaterial, WebGPURenderer, type ComputeNode, type Node } from 'three/webgpu'
 import { mostConfetti, useEffects } from '../effects.ts'
-import { hostSpot, podium } from '../layout.ts'
+import { places, podium, type HostMode } from '../layout.ts'
 import { useCelebrationCues } from './useCelebrationCues.ts'
 
 // A piece of paper, in metres, wide enough to catch the eye on a phone across the stage
@@ -91,6 +91,11 @@ const shower = 1
 // How many stretches of the hash's inputs each generation takes, more than any trait uses
 const generationStride = 16
 
+// What a piece over the podium's disc lands on: its top where it stands, the floor where it doesn't
+function podiumTopFor(host: HostMode) {
+  return places[host].onPodium ? podium.height : 0
+}
+
 // Confetti, after webgpu_compute_particles_snow: every piece's place and speed live on the GPU,
 // moved each frame by one compute pass and drawn as one instanced mesh, so the CPU does no work
 // per piece. A win bursts it from the winning crate; the finale showers it over the stage
@@ -109,12 +114,16 @@ export function Confetti({ crates }: { crates: [number, number][] }) {
     origin: { value: Vector3 }
     start: { value: number }
     linger: { value: number }
+    podiumTop: { value: number }
   } | null>(null)
   // The confetti's own clock, which runs only while it plays and never jumps by more than a
   // short step, so it lands as it should after a stall
   const clock = useRef({ time: 0, computeUntil: 0, visibleUntil: 0, warm: false })
   // A cue waiting for the next frame, which starts it on the confetti's clock
   const pending = useRef<{ mode: number; x: number; z: number } | null>(null)
+  // The host has changed place, so the pieces lying where the podium stood, or stands now, settle
+  // onto what is there
+  const settle = useRef(false)
 
   useLayoutEffect(() => {
     const { gl, scene } = get()
@@ -132,6 +141,17 @@ export function Confetti({ crates }: { crates: [number, number][] }) {
     const origin = uniform(new Vector3())
     const start = uniform(0)
     const linger = uniform(burstLinger)
+    // The podium's top where it stands, and the floor where it doesn't
+    const podiumTop = uniform(podiumTopFor(useEffects.getState().host))
+    // Over the podium a piece lands on its top
+    const { hostSpot } = places.podium
+    const groundAt = (position: Node<'vec3'>, rest: Node<'float'>) => {
+      const overPodium = position.xz
+        .sub(vec2(hostSpot.x, hostSpot.z))
+        .length()
+        .lessThan(podium.radius)
+      return select(overPodium, rest.add(podiumTop), rest)
+    }
 
     // Four numbers a piece in every buffer, read and written whole: a 2014 Intel Mac's Metal
     // compiler fails on a compute pass that writes single fields of three-number elements
@@ -190,17 +210,16 @@ export function Confetti({ crates }: { crates: [number, number][] }) {
         const swaying = now.mul(trait(3).mul(swayRange).add(swayLeast)).add(trait(4).mul(TWO_PI))
         const drift = vec3(sin(swaying), 0, cos(swaying.mul(0.8))).mul(sway)
         position.assign(position.add(velocity.add(drift).mul(step)))
-        // Over the podium the piece lands on its top, and one that meets its side comes to rest on
-        // the top at its edge rather than inside it
-        const overPodium = position.xz
-          .sub(vec2(hostSpot.x, hostSpot.z))
-          .length()
-          .lessThan(podium.radius)
-        const ground = select(overPodium, rest.add(podium.height), rest)
+        // A piece that meets the podium's side comes to rest on the top at its edge rather than
+        // inside it
+        const ground = groundAt(position, rest)
         If(position.y.lessThanEqual(ground), () => {
           position.y.assign(ground)
           state.x.assign(now)
         })
+      }).ElseIf(state.x.greaterThanEqual(0), () => {
+        // A landed piece lies on whatever is under it now
+        position.y.assign(groundAt(position, rest))
       })
 
       positions.element(instanceIndex).assign(vec4(position, 0))
@@ -260,6 +279,7 @@ export function Confetti({ crates }: { crates: [number, number][] }) {
       origin,
       start,
       linger,
+      podiumTop,
     }
     return () => {
       parts.current = null
@@ -270,6 +290,16 @@ export function Confetti({ crates }: { crates: [number, number][] }) {
       for (const buffer of [positions, velocities, states]) buffer.value.dispose()
     }
   }, [get])
+
+  useLayoutEffect(
+    () =>
+      useEffects.subscribe(({ host }, previous) => {
+        if (host === previous.host || !parts.current) return
+        parts.current.podiumTop.value = podiumTopFor(host)
+        settle.current = true
+      }),
+    [],
+  )
 
   useCelebrationCues({
     onCue: (name, final) => {
@@ -310,7 +340,17 @@ export function Confetti({ crates }: { crates: [number, number][] }) {
       made.mesh.visible = true
       c.warm = false
     }
-    if (!made.mesh.visible) return
+    if (!made.mesh.visible) {
+      // Nothing lies on the stage, and the next burst starts afresh
+      settle.current = false
+      return
+    }
+    if (settle.current && !c.warm) {
+      settle.current = false
+      // A step of nothing, which moves no piece in the air
+      made.timing.value.set(c.time, 0)
+      void made.renderer.compute(made.updates)
+    }
     // The frame that draws it once, hidden, to make its shaders
     if (c.warm) {
       c.warm = false

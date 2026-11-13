@@ -1,6 +1,6 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useLayoutEffect, useRef } from 'react'
-import { AdditiveBlending, Sprite, Vector2 } from 'three'
+import { AdditiveBlending, Sprite, Vector2, Vector3 } from 'three'
 import {
   Fn,
   If,
@@ -23,6 +23,8 @@ import {
   vec4,
 } from 'three/tsl'
 import { SpriteNodeMaterial, WebGPURenderer, type ComputeNode, type Node } from 'three/webgpu'
+import { useEffects } from '../effects.ts'
+import { places, type HostMode } from '../layout.ts'
 import { useCelebrationCues } from './useCelebrationCues.ts'
 
 // The finale's display: this many shells, one after another, each bursting into this many sparks
@@ -34,13 +36,10 @@ const sparks = shells * sparksPerShell
 const firstShell = 0.2
 const shellInterval = 0.55
 const shellJitter = 0.3
-// Where the shells burst: over the back of the stage, behind the host and in front of the marquee,
-// at the height of the sign, since the opening view sees little sky above it
+// Where the shells burst: over the back of the stage, this wide and this tall, behind the host and
+// in front of the marquee, as deep and as high as her place gives (layout.ts)
 const burstHalfWidth = 2.6
-const burstLow = 2.4
 const burstHeight = 0.6
-const burstNear = -2.7
-const burstDepth = 1.4
 // How fast a shell's sparks fly out, and how much faster for a bigger shell
 const speedLeast = 1.8
 const speedRange = 0.6
@@ -61,6 +60,13 @@ const generationStride = 8
 const shellStretch = 6 * sparks
 // A frame longer than this, as when the tab was hidden, moves the sparks no further
 const longestStep = 0.1
+
+// The burst box's lowest height, nearest depth and depth back from there, for a place of the
+// host's, as the uniform holds them
+function regionFor(host: HostMode) {
+  const { low, near, depth } = places[host].fireworks
+  return new Vector3(low, near, depth)
+}
 
 // Fireworks over the stage at the finale, after webgpu_compute_particles: every spark's place and
 // speed live on the GPU, moved each frame by one compute pass and drawn as one sprite repeated for
@@ -94,6 +100,11 @@ export function Fireworks() {
     // Each finale is a new generation; the buffers start at 0, so every spark is hidden before one
     const generation = uniform(-1)
     const start = uniform(0)
+    // The burst box's lowest height, nearest depth and depth, for the host's place now
+    const region = uniform(regionFor(useEffects.getState().host))
+    const unsubscribe = useEffects.subscribe(({ host }, previous) => {
+      if (host !== previous.host) region.value.copy(regionFor(host))
+    })
 
     // Four numbers a spark in every buffer, read and written whole: a 2014 Intel Mac's Metal
     // compiler fails on a compute pass that writes single fields of three-number elements
@@ -121,8 +132,8 @@ export function Fireworks() {
         position.assign(
           vec3(
             ofShell(1).mul(2).sub(1).mul(burstHalfWidth),
-            ofShell(2).mul(burstHeight).add(burstLow),
-            ofShell(3).mul(burstDepth).negate().add(burstNear),
+            ofShell(2).mul(burstHeight).add(region.x),
+            ofShell(3).mul(region.z).negate().add(region.y),
           ),
         )
         // Evenly over a sphere, a little faster or slower each
@@ -195,6 +206,7 @@ export function Fireworks() {
 
     parts.current = { renderer: gl, sprite, updates: [update], timing, generation, start }
     return () => {
+      unsubscribe()
       parts.current = null
       scene.remove(sprite)
       // Every sprite shares three's one quad, which stays

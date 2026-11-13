@@ -1,6 +1,7 @@
 import { buttonGroup, folder, useControls } from 'leva'
 import { useEffect, useRef } from 'react'
 import { create } from 'zustand'
+import type { HostMode } from './layout.ts'
 
 export type Antialiasing = 'msaa' | 'fxaa'
 
@@ -13,6 +14,8 @@ export type ShadowSize = 1024 | 2048
 // Every switch and slider of the panel's Effects folder, which the stage and the app read here
 export interface Effects {
   look: Look
+  // Where the host stands, on her podium or on the floor
+  host: HostMode
   // A glow around whatever emits light
   bloom: boolean
   bloomStrength: number
@@ -94,8 +97,8 @@ export type Preset = 'phone' | 'full' | 'off'
 
 // Phone is meant to run smoothly on a mid-range phone, Full is every extra, Off nothing at all,
 // which in daylight draws the stage exactly as it was drawn before there were effects. A preset
-// sets the switches and the confetti's count; the look, the other sliders and the resolution stay
-// as they are
+// sets the switches and the confetti's count; the look, the host's place, the other sliders and
+// the resolution stay as they are
 export const presets: Record<Preset, Switches> = {
   phone: {
     bloom: true,
@@ -194,6 +197,7 @@ const beamResolutionSlider = { value: 0.25, min: 0.1, max: 1, step: 0.05 }
 // first frame
 export const useEffects = create<Effects>(() => ({
   look: 'studio',
+  host: 'podium',
   ...presets.phone,
   bloomStrength: strengthSlider.value,
   gloss: glossSlider.value,
@@ -235,6 +239,12 @@ export function useEffectsFolder() {
           options: { Studio: 'studio', Daylight: 'daylight' },
           label: 'Look',
           hint: 'The night studio, or the sunny stage before it',
+        },
+        host: {
+          value: 'podium',
+          options: { Podium: 'podium', Floor: 'floor' },
+          label: 'Host',
+          hint: 'The host on her podium behind the crates, or on the floor, nearer and larger',
         },
         bloom: { value: presets.phone.bloom, label: 'Bloom', hint: 'A glow around what shines' },
         bloomStrength: { ...strengthSlider, label: 'Strength', hint: 'How bright the glow is' },
@@ -372,7 +382,8 @@ export function useEffectsFolder() {
     applyPreset.current = (preset) => set(presets[preset])
   }, [set])
 
-  const { look, bloom, bloomStrength, outline, antialiasing, reflection, glossy, gloss } = values
+  const { look, host, bloom, bloomStrength, outline, antialiasing, reflection, glossy } = values
+  const { gloss } = values
   const { rings, ringBrightness, spotlights, shadowSize, haze, hazeDensity, marquee } = values
   const { goldShine, confetti, confettiCount, fireworks, flames, lightCues, cameraMoves } = values
   const { streaks, zoomBurst, cheapBeams, lightBeams, beamSteps, beamResolution } = values
@@ -380,6 +391,7 @@ export function useEffectsFolder() {
   useEffect(() => {
     useEffects.setState({
       look: look === 'daylight' ? 'daylight' : 'studio',
+      host: host === 'floor' ? 'floor' : 'podium',
       bloom,
       bloomStrength,
       outline,
@@ -411,6 +423,7 @@ export function useEffectsFolder() {
     })
   }, [
     look,
+    host,
     bloom,
     bloomStrength,
     outline,

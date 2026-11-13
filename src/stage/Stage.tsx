@@ -7,7 +7,7 @@ import { useEffects, useEffectsFolder, usesPipeline } from './effects.ts'
 import { Celebrations } from './effects/Celebrations.tsx'
 import { Floor } from './Floor.tsx'
 import { Host } from './Host.tsx'
-import { crates } from './layout.ts'
+import { crates, places } from './layout.ts'
 import { Lights } from './Lights.tsx'
 import { Pipeline } from './Pipeline.tsx'
 import { Podium } from './Podium.tsx'
@@ -29,6 +29,7 @@ export function Stage() {
   useEffectsFolder()
   const pipeline = useEffects(usesPipeline)
   const look = useEffects((s) => s.look)
+  const host = useEffects((s) => s.host)
 
   // A pan moves the point the camera turns around, and the camera stands at or above it, so the
   // point is kept on or above the floor: a pan that meets the floor slides along it rather than
@@ -76,7 +77,7 @@ export function Stage() {
       {crates.map(([x, z], index) => (
         <Crate key={index} index={index} x={x} z={z} />
       ))}
-      <Podium />
+      {places[host].onPodium && <Podium />}
       {/* The host and her clips are large, so the rest of the stage doesn't wait for them */}
       <Suspense fallback={null}>
         <Host />

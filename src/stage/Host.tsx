@@ -3,15 +3,16 @@ import { useMemo, useRef } from 'react'
 import { SkinnedMesh, type Object3D } from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { clone } from 'three/addons/utils/SkeletonUtils.js'
-import { hostSpot } from './layout.ts'
+import { useEffects } from './effects.ts'
+import { places } from './layout.ts'
 import { useHostAnimations } from './useHostAnimations.ts'
 
 const ignoreRays = () => undefined
-const spot = hostSpot.toArray()
 
 export function Host() {
   const gltf = useLoader(GLTFLoader, `${import.meta.env.BASE_URL}models/gltf/Michelle.glb`)
   const root = useRef<Object3D>(null)
+  const standing = useEffects((s) => s.host)
 
   // Loaded models are cached and shared, so the host is a clone, set up before anything uses it.
   // She takes no presses: she stands behind the crates, so a press on her goes on to whatever lies
@@ -31,5 +32,6 @@ export function Host() {
 
   useHostAnimations(root)
 
-  return <primitive ref={root} object={model} rotation-x={-Math.PI / 2} position={spot} />
+  const { hostSpot } = places[standing]
+  return <primitive ref={root} object={model} rotation-x={-Math.PI / 2} position={hostSpot} />
 }

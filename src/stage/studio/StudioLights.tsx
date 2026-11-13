@@ -81,9 +81,9 @@ function gobo(spin: number) {
 const gobos = colourSpots.map(({ spin }) => gobo(spin))
 
 // While the light beams show, every spot but the key casts a shadow too, so the crates cut the
-// beams of the spots over them and the podium casts the coloured spots' shadows, each shadow drawn
-// at a size the blurred haze can't tell from finer, its depth spanning the highest spot's reach to
-// the floor and past it
+// beams of the spots over them and the podium, or the host standing on the floor, casts the
+// coloured spots' shadows, each shadow drawn at a size the blurred haze can't tell from finer, its
+// depth spanning the highest spot's reach to the floor and past it
 const beamShadowSize = 512
 const beamShadowNear = 0.5
 const beamShadowFar = 10

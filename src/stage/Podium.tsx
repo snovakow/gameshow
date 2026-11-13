@@ -1,4 +1,4 @@
-import { hostSpot, podium } from './layout.ts'
+import { places, podium } from './layout.ts'
 import { useMetals } from './materials.ts'
 
 // A dark drum, so the host stands out against it, with a band of the stage's gold round its top
@@ -15,6 +15,7 @@ const proud = 0.004
 export function Podium() {
   const gold = useMetals((s) => s.gold)
   const { radius, height, sides } = podium
+  const { hostSpot } = places.podium
   return (
     <group position={[hostSpot.x, 0, hostSpot.z]}>
       <mesh position-y={height / 2} castShadow receiveShadow>
