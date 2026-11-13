@@ -16,6 +16,9 @@ export interface Effects {
   look: Look
   // Where the host stands, on her podium or on the floor
   host: HostMode
+  // A follow spot of her own in the studio, and how bright it is against its usual brightness
+  hostLight: boolean
+  hostLightBrightness: number
   // A glow around whatever emits light
   bloom: boolean
   bloomStrength: number
@@ -93,8 +96,8 @@ export type Preset = 'phone' | 'full' | 'off'
 
 // Phone is meant to run smoothly on a mid-range phone, Full is every extra, Off nothing at all,
 // which in daylight draws the stage exactly as it was drawn before there were effects. A preset
-// sets the switches and the confetti's count; the look, the host's place, the other sliders and
-// the resolution stay as they are
+// sets the switches and the confetti's count; the look, the host's place, her light, the other
+// sliders and the resolution stay as they are
 export const presets: Record<Preset, Switches> = {
   phone: {
     bloom: true,
@@ -170,6 +173,8 @@ export const presets: Record<Preset, Switches> = {
 export const mostConfetti = 20000
 
 const strengthSlider = { value: 1, min: 0, max: 3, step: 0.05 }
+// Her light from off to twice as bright as it was set to read as she does in daylight
+const hostLightSlider = { value: 1, min: 0, max: 2, step: 0.05 }
 const glossSlider = { value: 0.9, min: 0, max: 1, step: 0.05 }
 // Thick enough at the slider's start to lift the floor's far edge, thin enough that the crates
 // standing in it keep their colour
@@ -190,6 +195,8 @@ const beamResolutionSlider = { value: 0.25, min: 0.1, max: 1, step: 0.05 }
 export const useEffects = create<Effects>(() => ({
   look: 'studio',
   host: 'podium',
+  hostLight: true,
+  hostLightBrightness: hostLightSlider.value,
   ...presets.phone,
   bloomStrength: strengthSlider.value,
   gloss: glossSlider.value,
@@ -236,6 +243,16 @@ export function useEffectsFolder() {
           options: { Podium: 'podium', Floor: 'floor' },
           label: 'Host',
           hint: 'The host on her podium behind the crates, or on the floor, nearer and larger',
+        },
+        hostLight: {
+          value: true,
+          label: 'Host light',
+          hint: 'A spot of her own follows the host in the studio',
+        },
+        hostLightBrightness: {
+          ...hostLightSlider,
+          label: 'Brightness',
+          hint: "How bright the host's light is",
         },
         bloom: { value: presets.phone.bloom, label: 'Bloom', hint: 'A glow around what shines' },
         bloomStrength: { ...strengthSlider, label: 'Strength', hint: 'How bright the glow is' },
@@ -367,7 +384,8 @@ export function useEffectsFolder() {
     applyPreset.current = (preset) => set(presets[preset])
   }, [set])
 
-  const { look, host, bloom, bloomStrength, outline, antialiasing, reflection, glossy } = values
+  const { look, host, hostLight, hostLightBrightness } = values
+  const { bloom, bloomStrength, outline, antialiasing, reflection, glossy } = values
   const { gloss } = values
   const { spotlights, shadowSize, haze, hazeDensity, marquee } = values
   const { goldShine, confetti, confettiCount, fireworks, flames, lightCues, cameraMoves } = values
@@ -377,6 +395,8 @@ export function useEffectsFolder() {
     useEffects.setState({
       look: look === 'daylight' ? 'daylight' : 'studio',
       host: host === 'floor' ? 'floor' : 'podium',
+      hostLight,
+      hostLightBrightness,
       bloom,
       bloomStrength,
       outline,
@@ -407,6 +427,8 @@ export function useEffectsFolder() {
   }, [
     look,
     host,
+    hostLight,
+    hostLightBrightness,
     bloom,
     bloomStrength,
     outline,

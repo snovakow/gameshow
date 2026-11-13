@@ -72,8 +72,8 @@ function stop(running: Running) {
 
 // Puts every light back as the studio made it
 function rest() {
-  const { fill, key, crateSpots, colourSpots } = lightRig
-  for (const rig of [fill, key, ...crateSpots, ...colourSpots]) {
+  const { fill, key, crateSpots, colourSpots, host } = lightRig
+  for (const rig of [fill, key, host, ...crateSpots, ...colourSpots]) {
     if (rig) rig.light.intensity = rig.rest
   }
   for (const { light, aim } of colourSpots) light.target.position.copy(aim)
@@ -151,7 +151,7 @@ export function LightCues() {
   useFrame(() => {
     const now = seconds()
     const { spots, sweep, strobe, dim, bulbs } = runs.current
-    const { fill, key, crateSpots, colourSpots } = lightRig
+    const { fill, key, crateSpots, colourSpots, host } = lightRig
     const lit = 1 - level(dim, now)
     // In step with the bulbs, which strobe by the time the renderer last drew with
     const flashing = level(strobe, now)
@@ -164,6 +164,9 @@ export function LightCues() {
 
     if (fill) fill.light.intensity = fill.rest * lit
     if (key) key.light.intensity = key.rest * lit
+    // Her light darkens with the studio for a loss, and no other cue changes it, so she stays lit
+    // as she was through the flashing and the sweeps
+    if (host) host.light.intensity = host.rest * lit
     for (let crate = 0; crate < crateSpots.length; crate++) {
       const { light, rest: resting } = crateSpots[crate]
       const spot = spots[crate]

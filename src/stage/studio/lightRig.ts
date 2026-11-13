@@ -17,4 +17,7 @@ export const lightRig = {
   crateSpots: [] as RigLight<SpotLight>[],
   // Each with where it points at rest
   colourSpots: [] as (RigLight<SpotLight> & { aim: Vector3 })[],
+  // The host's own light, while its switch is on; it follows her by itself, so the cues only dim
+  // it
+  host: null as RigLight<SpotLight> | null,
 }

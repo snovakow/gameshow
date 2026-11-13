@@ -1,13 +1,18 @@
 import { useLoader } from '@react-three/fiber'
-import { useMemo, useRef } from 'react'
+import { useLayoutEffect, useMemo, useRef } from 'react'
 import { SkinnedMesh, type Object3D } from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { clone } from 'three/addons/utils/SkeletonUtils.js'
 import { useEffects } from './effects.ts'
+import { hostBones } from './hostBones.ts'
 import { places } from './layout.ts'
 import { useHostAnimations } from './useHostAnimations.ts'
 
 const ignoreRays = () => undefined
+
+// Her hips' bone, as the loader names it: Mixamo's names hold a colon, which three's node names
+// can't, so the loader drops it
+const hipsBone = 'mixamorigHips'
 
 export function Host() {
   const gltf = useLoader(GLTFLoader, `${import.meta.env.BASE_URL}models/gltf/Michelle.glb`)
@@ -29,6 +34,15 @@ export function Host() {
     })
     return host
   }, [gltf])
+
+  // Her hips are made known to what follows her, such as her light in the studio
+  useLayoutEffect(() => {
+    const hips = model.getObjectByName(hipsBone) ?? null
+    hostBones.hips = hips
+    return () => {
+      if (hostBones.hips === hips) hostBones.hips = null
+    }
+  }, [model])
 
   useHostAnimations(root)
 
