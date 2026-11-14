@@ -298,9 +298,10 @@ function grainData(): Uint8Array {
 }
 
 // The light beams, after three's volumetric lighting example: a box of drifting haze over the
-// stage on a layer of its own, which the spots on that layer light and shadow as they shine
-// through it, marched in steps from each pixel. The render pipeline draws it in a small pass of
-// its own, blurs it and lays it over the picture, so this makes the haze and hands it over
+// stage on a layer of its own, which the spots on that layer light as they shine through it, and
+// shadow while they cast shadows, marched in steps from each pixel. The render pipeline draws it
+// in a small pass of its own, blurs it and lays it over the picture, so this makes the haze and
+// hands it over
 export function LightBeams() {
   const get = useThree((s) => s.get)
 
@@ -336,8 +337,9 @@ export function LightBeams() {
     const box = new Mesh(geometry, material)
     box.position.set(...hazePlace)
     box.layers.set(beamLayer)
-    // The spots' shadows reach into the haze, so the crates cut the beams of the spots over them
-    // and the podium, or the host standing on the floor, casts the coloured spots' shadows
+    // The spots' shadows, while they cast them, reach into the haze, so the crates cut the beams of
+    // the spots over them and the podium, or the host standing on the floor, casts the coloured
+    // spots' shadows
     box.receiveShadow = true
     box.raycast = () => undefined
     scene.add(box)

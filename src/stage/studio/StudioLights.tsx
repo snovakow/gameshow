@@ -15,7 +15,7 @@ const fillIntensity = 1.2
 // The key light, high in front of the stage and a little to the camera's side, aimed at the middle
 // of the narrowest cone round the row and the host on her podium, and wide enough to take them all
 // in with room to spare. It alone casts shadows in the studio, but while the light beams show the
-// spots cast them too
+// spots may cast them too, at their own switch
 const key = {
   colour: 0xfff1dc,
   intensity: 110,
@@ -80,10 +80,10 @@ function gobo(spin: number) {
 }
 const gobos = colourSpots.map(({ spin }) => gobo(spin))
 
-// While the light beams show, every spot but the key casts a shadow too, so the crates cut the
-// beams of the spots over them and the podium, or the host standing on the floor, casts the
-// coloured spots' shadows, each shadow drawn at a size the blurred haze can't tell from finer, its
-// depth spanning the highest spot's reach to the floor and past it
+// While the light beams show, every spot but the key may cast a shadow too, at the beams' shadows'
+// switch, so the crates cut the beams of the spots over them and the podium, or the host standing
+// on the floor, casts the coloured spots' shadows, each shadow drawn at a size the blurred haze
+// can't tell from finer, its depth spanning the highest spot's reach to the floor and past it
 const beamShadowSize = 512
 const beamShadowNear = 0.5
 const beamShadowFar = 10
@@ -94,14 +94,16 @@ const beamShadowNormalBias = 0.02
 type Places = [number, number][]
 
 // The studio's lights: a faint fill and the key light always, and, with the Spotlights switch, a
-// spot on each crate and the two coloured ones, which light the light beams' haze and cast
-// shadows while the beams show. A light added or taken away, or one that starts or stops casting
-// a shadow, recompiles the lit shaders once
+// spot on each crate and the two coloured ones, which light the light beams' haze while the beams
+// show, and cast shadows then if the beams' shadows are on. A light added or taken away, or one
+// that starts or stops casting a shadow, recompiles the lit shaders once
 export function StudioLights({ crates }: { crates: Places }) {
   const get = useThree((s) => s.get)
   const spotlightsOn = useEffects((s) => s.spotlights)
   const shadowSize = useEffects((s) => s.shadowSize)
   const beams = useEffects((s) => s.lightBeams)
+  // The beams' shadows' switch counts only while the beams show
+  const shadowed = useEffects((s) => s.lightBeams && s.beamShadows)
 
   // Made afresh for a new size of shadow map rather than resized: the renderer would resize the
   // map in place, but a way of drawing the stage it has drawn before, such as without the render
@@ -155,9 +157,10 @@ export function StudioLights({ crates }: { crates: Places }) {
       spots.push(spot)
     })
     for (const spot of spots) {
-      // Made afresh when the beams come and go, as the key light is for its shadow's size
-      if (beams) {
-        spot.layers.enable(beamLayer)
+      // Made afresh when the beams or their shadows come and go, as the key light is for its
+      // shadow's size
+      if (beams) spot.layers.enable(beamLayer)
+      if (shadowed) {
         spot.castShadow = true
         spot.shadow.mapSize.set(beamShadowSize, beamShadowSize)
         spot.shadow.camera.near = beamShadowNear
@@ -183,7 +186,7 @@ export function StudioLights({ crates }: { crates: Places }) {
         spot.dispose()
       }
     }
-  }, [get, crates, spotlightsOn, beams])
+  }, [get, crates, spotlightsOn, beams, shadowed])
 
   return null
 }

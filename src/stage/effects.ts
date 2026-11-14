@@ -58,10 +58,12 @@ export interface Effects {
   zoomBurst: boolean
   // A soft cone of light under each spot
   cheapBeams: boolean
-  // Beams of light through a drifting haze, lit and shadowed by the spots, in place of the cones,
-  // with how many steps each beam is sampled in and how finely they are drawn, as a fraction of
-  // the picture's own resolution
+  // Beams of light through a drifting haze, lit by the spots, in place of the cones, with how many
+  // steps each beam is sampled in and how finely they are drawn, as a fraction of the picture's own
+  // resolution
   lightBeams: boolean
+  // Whether the spots cast shadows while the light beams show, through the haze and onto the stage
+  beamShadows: boolean
   beamSteps: number
   beamResolution: number
   // The most device pixels drawn for each CSS pixel
@@ -96,8 +98,8 @@ export type Preset = 'phone' | 'full' | 'off'
 
 // Phone is meant to run smoothly on a mid-range phone, Full is every extra, Off nothing at all,
 // which in daylight draws the stage exactly as it was drawn before there were effects. A preset
-// sets the switches and the confetti's count; the look, the host's place, her light, the other
-// sliders and the resolution stay as they are
+// sets the switches and the confetti's count; the look, the host's place, her light, the beams'
+// shadows, the other sliders and the resolution stay as they are
 export const presets: Record<Preset, Switches> = {
   phone: {
     bloom: true,
@@ -198,6 +200,7 @@ export const useEffects = create<Effects>(() => ({
   hostLight: true,
   hostLightBrightness: hostLightSlider.value,
   ...presets.phone,
+  beamShadows: true,
   bloomStrength: strengthSlider.value,
   gloss: glossSlider.value,
   hazeDensity: hazeSlider.value,
@@ -349,7 +352,12 @@ export function useEffectsFolder() {
         lightBeams: {
           value: presets.phone.lightBeams,
           label: 'Light beams',
-          hint: 'Beams of light through a haze, shadowed by the stage, in place of the cones',
+          hint: 'Beams of light through a haze, in place of the cones',
+        },
+        beamShadows: {
+          value: true,
+          label: 'Beam shadows',
+          hint: 'The spots cast shadows through the beams and onto the stage',
         },
         beamSteps: {
           ...beamStepsSlider,
@@ -389,7 +397,8 @@ export function useEffectsFolder() {
   const { gloss } = values
   const { spotlights, shadowSize, haze, hazeDensity, marquee } = values
   const { goldShine, confetti, confettiCount, fireworks, flames, lightCues, cameraMoves } = values
-  const { streaks, zoomBurst, cheapBeams, lightBeams, beamSteps, beamResolution } = values
+  const { streaks, zoomBurst, cheapBeams, lightBeams, beamShadows, beamSteps, beamResolution } =
+    values
   const { resolution } = values
   useEffect(() => {
     useEffects.setState({
@@ -420,6 +429,7 @@ export function useEffectsFolder() {
       zoomBurst,
       cheapBeams,
       lightBeams,
+      beamShadows,
       beamSteps,
       beamResolution,
       resolution,
@@ -452,6 +462,7 @@ export function useEffectsFolder() {
     zoomBurst,
     cheapBeams,
     lightBeams,
+    beamShadows,
     beamSteps,
     beamResolution,
     resolution,
