@@ -82,7 +82,7 @@ The stage draws with WebGL 2 on every device, since WebGPU's compute passes, whi
 
 ## Credits
 
-- [three.js](https://threejs.org), including the host model, the textures, among them the two noise textures the flames are drawn from, and the typefaces, and the techniques of its examples for the reflective floors, the studio's sky and glossy reflection, the patterns its coloured spots project, the haze, the gold's shine, the confetti, the fireworks, the flames, the streaks, the zoom burst and the light beams.
+- [three.js](https://threejs.org), including the host model, the textures, among them the two noise textures the flames are drawn from, and the typefaces, and the techniques of its examples for the reflective floors, the studio's sky and glossy reflection, the haze, the gold's shine, the confetti, the fireworks, the flames, the streaks, the zoom burst and the light beams. The turning patterns the coloured spots throw across the stage are the project's own.
 - The host's animations come from [Mixamo](https://www.mixamo.com).
 - The audience's sounds are public-domain (CC0) recordings by Joseph Sardin of [BigSoundBank](https://bigsoundbank.com), ShangusBurger (Shane Vincent), noah0189 and phmiller42 on [Freesound](https://freesound.org), and Ddis tts on [Wikimedia Commons](https://commons.wikimedia.org), each cut and re-encoded for the show. [The audio folder's README](public/audio/README.md) lists every file and its source.
 - The MgOpen typefaces, under the MAGENTA licence included with them; the Droid fonts, under the Apache License 2.0; Gentilis, from SIL's Gentium, under the SIL Open Font License; and Kenney Fonts, in the public domain.
