@@ -2,7 +2,7 @@
 
 **TypeScript + React + three.js + React Three Fiber + Vite + WebGPU**
 
-Gameshow is a 3D game-show stage in the browser, being built toward a game of the Monty Hall problem: three crates, one prize, and the question of whether to switch. Today the show plays: the host runs round after round, you pick a crate, and in the Monty Hall game she opens an empty one and offers you the switch. You can also make a show for someone as a gift and send it to them as a link. A studio audience murmurs, applauds, cheers and groans along, in a night studio under spotlights.
+Gameshow is a 3D game show in the browser, played on the Monty Hall problem: three crates, one prize, and the question of whether to switch. The host runs the show round after round: you pick a crate, she opens an empty one and offers you the switch, and a tab adds up what you win. A simpler game is a straight pick of one crate in three. You can also make a show for someone as a gift, with a greeting to them in lights over the stage and the winnings kept within a range you choose, and send it to them as a link. A studio audience murmurs, applauds, cheers and groans along, in a night studio under spotlights.
 
 **Live demo:** [snovakow.com/gameshow](https://snovakow.com/gameshow/)
 
@@ -64,9 +64,9 @@ Looking around stops a little above level, so the stage is never seen head-on an
 
 ## Workflow
 
-- **Planned in phases.** The rebuild followed a written plan. Each phase was one focused thread, and the phases that changed code ended with lint and a type-checked production build passing.
+- **Planned in phases.** The rebuild followed a written plan, and the game show a second one, in fourteen milestones: the game's rules and its money first, under tests, then the show on the stage, the camera, the phone's layout, gift links, the sound, and the effects one at a time. Each phase or milestone was one focused thread. The milestones proved their work live in a browser, comparing screenshots pixel for pixel and frame rates against the version before, and ended with the tests, lint, the typecheck and a production build passing.
 - **Reviewed before it's committed.** Every batch of work goes through `/commit`, a [Claude Code skill](.claude/skills/commit/SKILL.md) that serves as the final code review. It's adapted from a shared [baseline](https://github.com/snovakow/Claude-Skills/tree/main/skills/commit), and it runs in a fresh thread, so the review starts without the author's assumptions. It reads every changed line for bugs, React Three Fiber and three.js pitfalls, type and lint escapes, new dependencies, leftovers and anything that shouldn't be public. Then it runs the checks, splits the work into focused commits with descriptive messages, and keeps this README accurate.
-- **Versioned checkpoints.** Versions continue from the prototype's 0.0.0: each reviewed batch ends with a version commit, which marks where the next review starts.
+- **Versioned checkpoints.** Versions continue from the prototype's 0.0.0: each reviewed batch ends with a version commit, which marks where the next review starts. The finished game show is version 0.2.0.
 - **Current dependencies.** Packages and tools track their latest releases, and each review reports anything that has fallen behind.
 - **Branches and deploys.** Work lands on `development` and reaches `main` by merge. The live site is a static build of `main`.
 
