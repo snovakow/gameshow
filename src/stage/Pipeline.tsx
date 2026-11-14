@@ -33,7 +33,6 @@ import {
   screenUV,
   smoothstep,
   time,
-  uniform,
   uv,
   vec2,
   vec4,
@@ -42,6 +41,7 @@ import {
 import { BlendMode, RenderPipeline, WebGPURenderer, type Node } from 'three/webgpu'
 import { useEffects } from './effects.ts'
 import { beamLayer, useBeamVolume } from './effects/beamVolume.ts'
+import { StreakReach, streakScale, streakSpacing, streakTaps } from './effects/streakReach.ts'
 import { ZoomBurst, burstCentre, burstStrength } from './effects/zoomBurst.ts'
 import { useOutlined } from './outlined.ts'
 
@@ -58,14 +58,8 @@ const edgeThickness = 2
 // The outline pulses between half and full strength this many times a second
 const pulseRate = 0.75
 
-// The streaks: drawn from what shines at a quarter of the picture's resolution, as wide as the
-// taps reach, each tap this many of their pixels from the last. The reach is a count of pixels
-// rather than a share of the picture, so a streak runs about an eighth of the width either side
-// of its light on a picture 2560 pixels wide, and further across a narrower one
-const streakScale = 0.25
-const streakTaps = 80
-const streakSpacing = 2
-// Only the brightest emitters streak, the bulbs and the fireworks, rather than all that glows
+// The streaks: only the brightest emitters streak, the bulbs and the fireworks, rather than all
+// that glows
 const streakThreshold = 0.45
 const streakSoftness = 0.2
 // The cool blue of a widescreen lens's flare, and how bright the streaks are against the bloom
@@ -85,16 +79,17 @@ const beamBrightness = 2.5
 
 // Streaks drawn from the bloom's bright pass, after three's anamorphic example: the bright parts
 // of what shines are kept once in a texture of their own, then each pixel gathers it from either
-// side along the row, nearer taps counting more, so a point of light becomes a level line. Every
-// texture it keeps is handed to made, to go with the rest of the pipeline's frame
+// side along the row, nearer taps counting more, so a point of light becomes a level line. How far
+// the taps reach follows the stage (streakReach.ts), and the streak's light is shared out over
+// them, so as the camera nears a bulb, the bulb and its streak grow together and keep their
+// brightness. Every texture it keeps is handed to made, to go with the rest of the pipeline's frame
 function streakPass(source: Node<'vec4'>, made: Disposable[]) {
   const streaks = bloom(source, streakStrength, 0, streakThreshold)
   streaks.smoothWidth.value = streakSoftness
   streaks.setResolutionScale(streakScale)
-  const taps = uniform(streakTaps)
   streaks.highPassFn = ({ input, threshold, smoothWidth }) => {
     const bright = smoothstep(threshold, threshold.add(smoothWidth), luminance(input.rgb))
-    // At the bloom's own resolution, since the taps then reach four times as far for the same cost
+    // At the bloom's own resolution, which the taps' spacing counts in
     const kept = rtt(mix(vec4(0), input, bright), null, null, {
       wrapS: MirroredRepeatWrapping,
       wrapT: MirroredRepeatWrapping,
@@ -103,13 +98,13 @@ function streakPass(source: Node<'vec4'>, made: Disposable[]) {
     made.push(kept)
     return Fn(() => {
       const total = vec4(0).toVar()
-      const half = taps.div(2)
-      const step = float(streakSpacing).div(viewportSize.x)
-      Loop({ start: half.negate(), end: half }, ({ i }) => {
-        const nearness = float(i).abs().div(half).oneMinus().pow(2)
+      const step = streakSpacing.div(viewportSize.x)
+      Loop({ start: streakTaps.negate(), end: streakTaps }, ({ i }) => {
+        const nearness = float(i).abs().div(streakTaps).oneMinus().pow(2)
         total.addAssign(kept.sample(vec2(uv().x.add(step.mul(i)), uv().y)).mul(nearness))
       })
-      return total.div(float(taps).div(3))
+      // The taps' nearness adds up to about two-thirds of their count either side
+      return total.div(streakTaps.mul(2).div(3))
     })()
   }
   return streaks
@@ -309,5 +304,10 @@ export function Pipeline({ crates: places }: { crates: [number, number][] }) {
   // A positive priority takes the frame from R3F, which then leaves drawing to this
   useFrame(() => pipeline.current?.render(), 1)
 
-  return burstOn ? <ZoomBurst crates={places} /> : null
+  return (
+    <>
+      {burstOn && <ZoomBurst crates={places} />}
+      {streaksOn && <StreakReach />}
+    </>
+  )
 }
