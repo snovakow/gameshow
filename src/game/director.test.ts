@@ -149,9 +149,9 @@ void test('a Monty Hall round runs its steps in order', async () => {
     'cue dud',
     'say offer',
     'awaitDecision',
+    'recordRound',
     'cue stay',
     'say stayed',
-    'recordRound',
     'phase reveal',
     'say open',
     'cue drumroll',
@@ -177,7 +177,7 @@ void test('a Monty Hall round runs its steps in order', async () => {
 void test('a simple round skips the host and the decision', async () => {
   const { played } = await play(config('simple', 'pureOdds'), seeded(2), mulberry32(2))
   const calls = roundCalls(played.calls, 1)
-  assert.deepEqual(calls.slice(0, 9), [
+  assert.deepEqual(calls.slice(0, 12), [
     'setCrates',
     'setRound',
     'phase pick',
@@ -185,10 +185,12 @@ void test('a simple round skips the host and the decision', async () => {
     'say round',
     'say pick',
     'awaitPick',
+    'recordRound',
     'cue pick',
     'say picked',
+    'phase reveal',
+    'say open',
   ])
-  assert.deepEqual(calls.slice(9, 12), ['recordRound', 'phase reveal', 'say open'])
   for (const absent of ['awaitDecision', 'say hostOpens', 'say offer', 'cue dud', 'phase decide']) {
     assert.ok(!played.calls.some((c) => `${c.name} ${String(c.arg)}`.startsWith(absent)), absent)
     assert.ok(!calls.includes(absent), absent)
@@ -263,22 +265,65 @@ void test("the host's crate is never the pick or the prize", async () => {
   assert.equal(rounds, 1000)
 })
 
-void test('a round is recorded at the final choice, before the drumroll', async () => {
+void test('a round is recorded at the final choice, before the line about it', async () => {
   for (const game of ['montyHall', 'simple'] as const) {
     const { played } = await play(config(game, 'withinRange'), seeded(6), mulberry32(6))
     const names = played.calls.map((c) => `${c.name} ${String(c.arg)}`)
     const records = names.flatMap((n, i) => (n.startsWith('recordRound') ? [i] : []))
-    const drumrolls = names.flatMap((n, i) => (n === 'cue drumroll' ? [i] : []))
-    const decisions = names.flatMap((n, i) =>
-      n === (game === 'montyHall' ? 'say stayed' : 'say picked') || n === 'say switched' ? [i] : [],
+    const choices = names.flatMap((n, i) =>
+      n.startsWith(game === 'montyHall' ? 'awaitDecision' : 'awaitPick') ? [i] : [],
     )
+    const lines = names.flatMap((n, i) =>
+      game === 'montyHall'
+        ? n === 'say stayed' || n === 'say switched'
+          ? [i]
+          : []
+        : n === 'say picked'
+          ? [i]
+          : [],
+    )
+    const reveals = names.flatMap((n, i) => (n === 'cue reveal' ? [i] : []))
     assert.equal(records.length, 5)
     records.forEach((record, i) => {
-      assert.ok(decisions[i] < record && record < drumrolls[i])
+      // The very next call after the choice resolves, ahead of its cue and the host's line
+      assert.equal(record, choices[i] + 1)
+      assert.ok(record < lines[i])
       // The reveal hasn't shown it yet, so the tab doesn't have it
       const added = names.findIndex((n, j) => j > record && n.startsWith('addToTab'))
-      assert.ok(added > drumrolls[i])
+      assert.ok(added > reveals[i])
     })
+  }
+})
+
+void test('a show stopped as the host answers the choice has already saved the round', async () => {
+  // A reload while she says what was chosen, as the page's going stops the show
+  for (const [game, line] of [
+    ['montyHall', 'say stayed'],
+    ['montyHall', 'say switched'],
+    ['simple', 'say picked'],
+  ] as const) {
+    const controller = new AbortController()
+    const script: Script = { pick: () => 1, choose: () => (line === 'say stayed' ? 'stay' : 'switch') }
+    const { io, played } = fakeIO(script, (call) => {
+      if (`${call.name} ${String(call.arg)}` === line && played.rounds.length === 2) {
+        controller.abort(new Error('stopped'))
+      }
+    })
+    await assert.rejects(
+      runShow(config(game, 'withinRange'), io, {
+        kind: 'demo',
+        random: mulberry32(13),
+        signal: controller.signal,
+      }),
+      /stopped/,
+    )
+    // Both rounds are saved, the second one undrawn: no reveal, and not on the tab
+    assert.deepEqual(
+      played.results.map((r) => r.round),
+      [1, 2],
+      line,
+    )
+    assert.equal(played.calls.filter((c) => c.name === 'addToTab').length, 1, line)
   }
 })
 

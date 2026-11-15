@@ -92,7 +92,8 @@ export interface ShowIO {
   awaitPick: () => Promise<number>
   awaitDecision: () => Promise<Choice>
   awaitNext: () => Promise<void>
-  // The round's result, saved before the reveal so a decided round is never replayed
+  // The round's result, saved at the final choice, before anything else of the round, so a
+  // decided round is never replayed
   recordRound: (result: RoundResult) => void
   // The round joins the tab, after the reveal shows it
   addToTab: (result: RoundResult, total: number) => void
@@ -197,11 +198,16 @@ export async function runShow(config: Config, io: ShowIO, options: ShowOptions):
 
     act()
     const pick = await step(io.awaitPick())
+    // The final choice is saved the moment it's made, before the host says a word about it, so a
+    // reload from then on goes on to the next round and never plays this one again. In the simple
+    // game the pick is the final choice
+    let chosen = pick
+    let result: RoundResult = { round, prize, choice: null, won: pick === winner }
+    act()
+    if (!montyHall) io.recordRound(result)
     cue('pick')
     await say('picked', { pick: pick + 1 })
 
-    let choice: Choice | null = null
-    let chosen = pick
     if (montyHall) {
       const opened = hostOpens(pick, winner, random)
       act()
@@ -214,16 +220,17 @@ export async function runShow(config: Config, io: ShowIO, options: ShowOptions):
       await say('offer', { pick: pick + 1, other: otherCrate(pick, opened) + 1 })
 
       act()
-      choice = await step(io.awaitDecision())
+      const choice = await step(io.awaitDecision())
       chosen = finalCrate(pick, opened, choice)
+      result = { round, prize, choice, won: chosen === winner }
+      act()
+      io.recordRound(result)
       cue(choice)
       await say(choice === 'stay' ? 'stayed' : 'switched', { final: chosen + 1 })
     }
 
-    const won = chosen === winner
-    const result: RoundResult = { round, prize, choice, won }
+    const { won } = result
     act()
-    io.recordRound(result)
     io.setPhase('reveal')
 
     await say('open')
