@@ -101,7 +101,8 @@ interface GameState {
   pick: (crate: number) => void
   decide: (choice: Choice | number) => void
   next: () => void
-  skipLine: () => void
+  // Ends the hold of the line with this id, only while it is the line being said
+  skipLine: (id: number) => void
   playAgain: () => void
   // The page's own: the gift link, the panel, the crates' frame loops and unmounting
   openGift: (gift: Gift) => void
@@ -354,8 +355,11 @@ export const useGame = create<GameState>()((set, get) => {
       set({ awaiting: null })
       done()
     },
-    skipLine: () => {
-      onLine?.()
+    // A tap lands on the bubble the player can see, which may still show the line before the one
+    // just said, as the bubble is drawn a frame or more after the line changes; that tap skips
+    // nothing, rather than a line not yet seen
+    skipLine: (id) => {
+      if (get().line?.id === id) onLine?.()
     },
     // A gift is played once, so only the demo plays again
     playAgain: () => {

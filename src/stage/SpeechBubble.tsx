@@ -285,7 +285,8 @@ export function SpeechBubble() {
           onPointerUp={contain}
           onClick={(e) => {
             e.stopPropagation()
-            skipLine()
+            // The line this bubble shows, which the store may already have moved on from
+            skipLine(line.id)
           }}
         >
           <span>{line.text}</span>
