@@ -90,6 +90,8 @@ interface GameState {
   poseCue: PoseCue | null
   // The show has said its last line
   over: boolean
+  // The host has been drawn on stage, loaded and in her first stance, so a show has her to run it
+  hostOnStage: boolean
   options: GameOptions
   // The gift this page plays, or null for the demo
   gift: Gift | null
@@ -105,6 +107,7 @@ interface GameState {
   openGift: (gift: Gift) => void
   setOptions: (options: Partial<GameOptions>) => void
   reportShut: (crate: number) => void
+  reportHostOnStage: () => void
   stop: () => void
 }
 
@@ -275,12 +278,14 @@ export const useGame = create<GameState>()((set, get) => {
     cue: null,
     poseCue: null,
     over: false,
+    hostOnStage: false,
     options: { game: 'montyHall', prizes: 'pureOdds', rounds: demoDefaults().rounds },
     gift: null,
 
-    // Called from the Start click, never an effect, so a show can't start twice
+    // Called from the Start click, never an effect, so a show can't start twice; and not before
+    // the host is on stage to run it
     start: () => {
-      if (get().phase !== 'title' || show) return
+      if (get().phase !== 'title' || show || !get().hostOnStage) return
       const { gift } = get()
       // A gift's settings were checked when its link was read; the demo's come from the panel
       const validation = gift
@@ -394,6 +399,9 @@ export const useGame = create<GameState>()((set, get) => {
         onShut = null
         done()
       }
+    },
+    reportHostOnStage: () => {
+      if (!get().hostOnStage) set({ hostOnStage: true })
     },
     stop: () => {
       halt()
